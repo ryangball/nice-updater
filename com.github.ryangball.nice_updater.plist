@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.github.ryangball.nice_updater</string>
+	<key>ProgramArguments</key>
+	<array>
+        <string>bash</string>
+        <string>/Library/Scripts/nice_updater.sh</string>
+        <string>main</string>
+	</array>
+    <key>StartInterval</key>
+    <integer>7200</integer>
+</dict>
+</plist>
