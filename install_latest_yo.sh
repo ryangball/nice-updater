@@ -12,3 +12,6 @@ curl -L $latestYoReleaseURL > /tmp/yo.pkg
 
 #install yo in /Applications/Utilities (default location)
 installer -pkg /tmp/yo.pkg -target /
+
+#clean up
+rm -f /tmp/yo.pkg
