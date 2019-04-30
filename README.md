@@ -4,7 +4,8 @@ A tool to update macOS that (nicely) gives the user several chances to install u
 ## Requirements
 ### yo.app
 - [yo.app](https://github.com/sheagcraig/yo) is required to display the Notification Center alerts. The alerts that yo.app create are persistent, and you can specify custom buttons which apply an action. This is used to allow the user to either cancel the alert, or install updates from there easily. *See [Jamf Pro Requirements](https://github.com/ryangball/nice-updater#jamf-pro-requirements) for related information.
-- You can download a release .pkg of yo.app [here](https://github.com/sheagcraig/yo/releases). There is also info on how to customize the yo.app default icon [here](https://github.com/sheagcraig/yo#icons).
+- To avoid packaging yo.app for use in your Jamf Pro environment, you can configure a Jamf Pro policy with "Execution Frequency" set to "Ongoing", triggered by a custom event called "yo" which runs [install_latest_yo.sh](https://github.com/ryangball/nice-updater/blob/master/install_latest_yo.sh) as a payload.
+- Alternatively you can download a release .pkg of yo.app [here](https://github.com/sheagcraig/yo/releases). There is also info on how to customize the yo.app default icon [here](https://github.com/sheagcraig/yo#icons).
 
 ### Jamf Pro Requirements
 *Note: There are no Jamf Pro policies required in order for this tool to function (if yo.app is installed). However, I use Jamf Pro to manage Macs. Consequently, I've created this minimally leveraging Jamf Pro. You could easily adapt this for use in other environments.*
@@ -90,3 +91,6 @@ When a user is alerted via one of the persistent Notification Center alerts, the
 To address this issue, when the user is alerted a random key string is generated and stored. This key is then simultaneously written to the main preference file and to the command that gets executed if and when the user clicks the "Install Now" button. Once the user clicks the "Install Now" button, that key is then written to a second preference file and used later in the process. I call this second preference file the "trigger".
 
 The second LaunchDaemon (com.github.ryangball.nice_updater_on_demand) runs the on_demand function of the script. This LaunchDaemon is configured with a "WatchPaths" key, and is set to execute the LaunchDaemon when the trigger file is modified in any way. Because the user has access to modify this trigger file at any time (if they know where to look) a mechanism was put in place to validate that the LaunchDaemon should in fact be running. Since the update key was stored in the main preference file, we can compare it with the key that will be written to the trigger file, and if they match the update process will continue. If the keys don't match, meaning the trigger file was modified by the user without clicking the "Install Now" button, the process will exit without action. This allows us to avoid potentially updating the system when a user inadvertently modifies the trigger file.
+
+## Special Thanks
+[kurtroberts](https://github.com/kurtroberts) - For [install_latest_yo.sh](https://github.com/ryangball/nice-updater/blob/master/install_latest_yo.sh)
