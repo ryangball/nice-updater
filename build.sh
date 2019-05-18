@@ -1,6 +1,6 @@
 #!/bin/bash
 
-identifier="com.github.ryangball.nice_updater"
+identifier="com.ryangball.nice_updater"
 version="1.0"
 
 # The title of the message that is displayed when software updates are in progress and a user is logged in
@@ -52,12 +52,6 @@ else
     echo "No version passed, using version $version"
 fi
 
-if [[ ! "$identifier" = "com.github.ryangball.nice_updater" ]]; then
-    rm "$PWD/com.github.ryangball.nice_updater.plist"
-    rm "$PWD/com.github.ryangball.nice_updater_on_demand.plist"
-    rm "$PWD/com.github.ryangball.nice_updater.prefs.plist"
-fi
-
 # Update the variables in the various files of the project
 # If you know of a more elegant/efficient way to do this please create a PR
 sed -i .bak "s#mainDaemonPlist=.*#mainDaemonPlist=\"$mainDaemonPlist\"#" "$PWD/postinstall.sh"
@@ -69,6 +63,7 @@ sed -i .bak "s#watchPathsPlist=.*#watchPathsPlist=\"$watchPathsPlist\"#" "$PWD/p
 sed -i .bak "s#watchPathsPlist=.*#watchPathsPlist=\"$watchPathsPlist\"#" "$PWD/nice_updater.sh"
 sed -i .bak "s#preferenceFileFullPath=.*#preferenceFileFullPath=\"$preferenceFileFullPath\"#" "$PWD/postinstall.sh"
 sed -i .bak "s#preferenceFileFullPath=.*#preferenceFileFullPath=\"$preferenceFileFullPath\"#" "$PWD/nice_updater.sh"
+sed -i .bak "s#yoPath=.*#yoPath=\"$yoPath\"#" "$PWD/preinstall.sh"
 
 # Create clean temp build directories
 find /private/tmp/nice_updater -mindepth 1 -delete
@@ -114,17 +109,23 @@ chmod +x /private/tmp/nice_updater/scripts/preinstall
 cp "$PWD/postinstall.sh" /private/tmp/nice_updater/scripts/postinstall
 chmod +x /private/tmp/nice_updater/scripts/postinstall
 
-# Create the binary
-# /usr/local/bin/shc -r -f "$PWD/nice_updater.sh" -o "$PWD/build/nice_updater"
+# Put the main script in place
 cp "$PWD/nice_updater.sh" /private/tmp/nice_updater/files/Library/Scripts/nice_updater.sh
 
 # Copy the LaunchDaemon plists to the temp build directory
-cp "$PWD/com.github.ryangball.nice_updater.plist" "/private/tmp/nice_updater/files/Library/LaunchDaemons/"
-cp "$PWD/com.github.ryangball.nice_updater_on_demand.plist" "/private/tmp/nice_updater/files/Library/LaunchDaemons/"
+cp "$PWD/$mainDaemonFileName" "/private/tmp/nice_updater/files/Library/LaunchDaemons/"
+cp "$PWD/$onDemainDaemonFileName" "/private/tmp/nice_updater/files/Library/LaunchDaemons/"
 cp "$PWD/$preferenceFileName" "/private/tmp/nice_updater/files/Library/Preferences/"
 
 # Remove any unwanted .DS_Store files from the temp build directory
 find "/private/tmp/nice_updater/" -name '*.DS_Store' -type f -delete
+
+# Remove the default plists if the identifier has changed
+if [[ ! "$identifier" = "com.github.ryangball.nice_updater" ]]; then
+    rm "$PWD/com.github.ryangball.nice_updater.plist" &> /dev/null
+    rm "$PWD/com.github.ryangball.nice_updater_on_demand.plist" &> /dev/null
+    rm "$PWD/com.github.ryangball.nice_updater.prefs.plist" &> /dev/null
+fi
 
 # Remove any extended attributes (ACEs) from the temp build directory
 /usr/bin/xattr -rc "/private/tmp/nice_updater"

@@ -2,9 +2,9 @@
 # shellcheck disable=SC2116,SC2002
 
 # These variables will be automagically updated if you run build.sh, no need to modify them
-mainOnDemandDaemonPlist="/Library/LaunchDaemons/com.github.ryangball.nice_updater_on_demand.plist"
-watchPathsPlist="/Library/Preferences/com.github.ryangball.nice_updater.trigger.plist"
-preferenceFileFullPath="/Library/Preferences/com.github.ryangball.nice_updater.prefs.plist"
+mainOnDemandDaemonPlist="/Library/LaunchDaemons/com.ryangball.nice_updater_on_demand.plist"
+watchPathsPlist="/Library/Preferences/com.ryangball.nice_updater.trigger.plist"
+preferenceFileFullPath="/Library/Preferences/com.ryangball.nice_updater.prefs.plist"
 
 ###### Variables below this point are not intended to be modified #####
 updateInProgressTitle=$(defaults read "$preferenceFileFullPath" UpdateInProgressTitle)

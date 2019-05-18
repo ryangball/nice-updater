@@ -1,14 +1,15 @@
 #!/bin/bash
 
 # These variables will be automagically updated if you run build.sh, no need to modify them
-mainDaemonPlist="/Library/LaunchDaemons/com.github.ryangball.nice_updater.plist"
-mainOnDemandDaemonPlist="/Library/LaunchDaemons/com.github.ryangball.nice_updater_on_demand.plist"
-watchPathsPlist="/Library/Preferences/com.github.ryangball.nice_updater.trigger.plist"
+mainDaemonPlist="/Library/LaunchDaemons/com.ryangball.nice_updater.plist"
+mainOnDemandDaemonPlist="/Library/LaunchDaemons/com.ryangball.nice_updater_on_demand.plist"
+watchPathsPlist="/Library/Preferences/com.ryangball.nice_updater.trigger.plist"
+yoPath="/Applications/Utilities/yo.app/Contents/MacOS/yo"
 
-if [[ ! -e "/Applications/Utilities/yo.app/Contents/MacOS/yo" ]]; then
+if [[ ! -e "$yoPath" ]]; then
     echo "yo.app is not installed; installing..."
     /usr/local/bin/jamf policy -event yo
-    if [[ ! -e "/Applications/Utilities/yo.app/Contents/MacOS/yo" ]]; then
+    if [[ ! -e "$yoPath" ]]; then
         echo "The installation failed; exiting."
         exit 1
     fi

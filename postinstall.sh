@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # These variables will be automagically updated if you run build.sh, no need to modify them
-mainDaemonPlist="/Library/LaunchDaemons/com.github.ryangball.nice_updater.plist"
-mainOnDemandDaemonPlist="/Library/LaunchDaemons/com.github.ryangball.nice_updater_on_demand.plist"
-preferenceFileFullPath="/Library/Preferences/com.github.ryangball.nice_updater.prefs.plist"
+mainDaemonPlist="/Library/LaunchDaemons/com.ryangball.nice_updater.plist"
+mainOnDemandDaemonPlist="/Library/LaunchDaemons/com.ryangball.nice_updater_on_demand.plist"
+preferenceFileFullPath="/Library/Preferences/com.ryangball.nice_updater.prefs.plist"
 
 # Set permissions on LaunchDaemon and Script
 chown root:wheel "$mainDaemonPlist"
