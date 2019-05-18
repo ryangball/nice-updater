@@ -1,6 +1,9 @@
 #!/bin/bash
 
-identifier="com.ryangball.nice_updater"
+# The main identifier which everything hinges on
+identifier="com.github.ryangball.nice_updater"
+
+# Default version of the build, you can leave this alone and specify as an argument like so: ./build.sh 1.7
 version="1.0"
 
 # The title of the message that is displayed when software updates are in progress and a user is logged in
@@ -43,7 +46,6 @@ onDemandDaemonIdentifier="${identifier}_on_demand"
 watchPathsPlist="/Library/Preferences/${identifier}.trigger.plist"
 preferenceFileFullPath="/Library/Preferences/${identifier}.prefs.plist"
 preferenceFileName="${preferenceFileFullPath##*/}"
-# watchPathsPlistFileName="${watchPathsPlist##*/}"
 
 if [[ -n "$1" ]]; then
     version="$1"
@@ -54,16 +56,16 @@ fi
 
 # Update the variables in the various files of the project
 # If you know of a more elegant/efficient way to do this please create a PR
-sed -i .bak "s#mainDaemonPlist=.*#mainDaemonPlist=\"$mainDaemonPlist\"#" "$PWD/postinstall.sh"
-sed -i .bak "s#mainDaemonPlist=.*#mainDaemonPlist=\"$mainDaemonPlist\"#" "$PWD/preinstall.sh"
-sed -i .bak "s#mainOnDemandDaemonPlist=.*#mainOnDemandDaemonPlist=\"$mainOnDemandDaemonPlist\"#" "$PWD/postinstall.sh"
-sed -i .bak "s#mainOnDemandDaemonPlist=.*#mainOnDemandDaemonPlist=\"$mainOnDemandDaemonPlist\"#" "$PWD/preinstall.sh"
-sed -i .bak "s#mainOnDemandDaemonPlist=.*#mainOnDemandDaemonPlist=\"$mainOnDemandDaemonPlist\"#" "$PWD/nice_updater.sh"
-sed -i .bak "s#watchPathsPlist=.*#watchPathsPlist=\"$watchPathsPlist\"#" "$PWD/preinstall.sh"
-sed -i .bak "s#watchPathsPlist=.*#watchPathsPlist=\"$watchPathsPlist\"#" "$PWD/nice_updater.sh"
-sed -i .bak "s#preferenceFileFullPath=.*#preferenceFileFullPath=\"$preferenceFileFullPath\"#" "$PWD/postinstall.sh"
-sed -i .bak "s#preferenceFileFullPath=.*#preferenceFileFullPath=\"$preferenceFileFullPath\"#" "$PWD/nice_updater.sh"
-sed -i .bak "s#yoPath=.*#yoPath=\"$yoPath\"#" "$PWD/preinstall.sh"
+sed -i '' "s#mainDaemonPlist=.*#mainDaemonPlist=\"$mainDaemonPlist\"#" "$PWD/postinstall.sh"
+sed -i '' "s#mainDaemonPlist=.*#mainDaemonPlist=\"$mainDaemonPlist\"#" "$PWD/preinstall.sh"
+sed -i '' "s#mainOnDemandDaemonPlist=.*#mainOnDemandDaemonPlist=\"$mainOnDemandDaemonPlist\"#" "$PWD/postinstall.sh"
+sed -i '' "s#mainOnDemandDaemonPlist=.*#mainOnDemandDaemonPlist=\"$mainOnDemandDaemonPlist\"#" "$PWD/preinstall.sh"
+sed -i '' "s#mainOnDemandDaemonPlist=.*#mainOnDemandDaemonPlist=\"$mainOnDemandDaemonPlist\"#" "$PWD/nice_updater.sh"
+sed -i '' "s#watchPathsPlist=.*#watchPathsPlist=\"$watchPathsPlist\"#" "$PWD/preinstall.sh"
+sed -i '' "s#watchPathsPlist=.*#watchPathsPlist=\"$watchPathsPlist\"#" "$PWD/nice_updater.sh"
+sed -i '' "s#preferenceFileFullPath=.*#preferenceFileFullPath=\"$preferenceFileFullPath\"#" "$PWD/postinstall.sh"
+sed -i '' "s#preferenceFileFullPath=.*#preferenceFileFullPath=\"$preferenceFileFullPath\"#" "$PWD/nice_updater.sh"
+sed -i '' "s#yoPath=.*#yoPath=\"$yoPath\"#" "$PWD/preinstall.sh"
 
 # Create clean temp build directories
 find /private/tmp/nice_updater -mindepth 1 -delete
