@@ -6,11 +6,11 @@
 	<string>com.github.ryangball.nice_updater</string>
 	<key>ProgramArguments</key>
 	<array>
-        <string>bash</string>
-        <string>/Library/Scripts/nice_updater.sh</string>
-        <string>main</string>
+		<string>bash</string>
+		<string>/Library/Scripts/nice_updater.sh</string>
+		<string>main</string>
 	</array>
-    <key>StartInterval</key>
-    <integer>7200</integer>
+	<key>StartInterval</key>
+	<integer>7200</integer>
 </dict>
 </plist>
