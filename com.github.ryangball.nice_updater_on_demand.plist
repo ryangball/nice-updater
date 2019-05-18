@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>Label</key>
-	<string>com.ryangball.nice_updater_on_demand</string>
+	<string>com.github.ryangball.nice_updater_on_demand</string>
 	<key>ProgramArguments</key>
 	<array>
 		<string>/bin/bash</string>
@@ -12,7 +12,7 @@
 	</array>
 	<key>WatchPaths</key>
 	<array>
-		<string>/Library/Preferences/com.ryangball.nice_updater_trigger.plist</string>
+		<string>/Library/Preferences/com.github.ryangball.nice_updater_trigger.plist</string>
 	</array>
 </dict>
 </plist>
