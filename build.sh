@@ -28,6 +28,9 @@ afterEmptyUpdateDelayDayCount="3"
 # The number of times to alert a single user prior to forcibly installing updates
 maxNotificationCount="3"
 
+# The start interval of the main plist, essentially the time in seconds between alerts, 7200 is two hours
+startInterval="7200"
+
 # The full path of the yo.app binary
 yoPath="/Applications/Utilities/yo.app/Contents/MacOS/yo"
 
@@ -49,12 +52,11 @@ else
     echo "No version passed, using version $version"
 fi
 
-if [[ $identifier -ne "com.github.ryangball.nice_updater" ]]; then
-    echo "Renaming files due to changed identifier..."
-    $(find $PWD -name *nice_updater.plist)
-    mv $(find $PWD -name *nice_updater.plist) "$PWD/${identifier}.plist"
-    mv "$PWD/com.github.ryangball.nice_updater_on_demand.plist" "$PWD/${identifier}_on_demand.plist"
-    mv "$PWD/com.github.ryangball.nice_updater.prefs.plist" "$PWD/${identifier}.prefs.plist"
+if [[ ! "$identifier" = "com.github.ryangball.nice_updater" ]]; then
+    rm "$PWD/com.github.ryangball.nice_updater.plist"
+    rm "$PWD/com.github.ryangball.nice_updater_on_demand.plist"
+    rm "$PWD/com.github.ryangball.nice_updater.prefs.plist"
+fi
 
 # Update the variables in the various files of the project
 # If you know of a more elegant/efficient way to do this please create a PR
@@ -67,9 +69,6 @@ sed -i .bak "s#watchPathsPlist=.*#watchPathsPlist=\"$watchPathsPlist\"#" "$PWD/p
 sed -i .bak "s#watchPathsPlist=.*#watchPathsPlist=\"$watchPathsPlist\"#" "$PWD/nice_updater.sh"
 sed -i .bak "s#preferenceFileFullPath=.*#preferenceFileFullPath=\"$preferenceFileFullPath\"#" "$PWD/postinstall.sh"
 sed -i .bak "s#preferenceFileFullPath=.*#preferenceFileFullPath=\"$preferenceFileFullPath\"#" "$PWD/nice_updater.sh"
-/usr/bin/plutil -replace WatchPaths -json "[ \"$watchPathsPlist\" ]" "$PWD/$onDemainDaemonFileName"
-/usr/bin/plutil -replace Label -string $onDemandDaemonIdentifier "$PWD/$onDemainDaemonFileName"
-/usr/bin/plutil -replace Label -string $identifier "$PWD/$mainDaemonFileName"
 
 # Create clean temp build directories
 find /private/tmp/nice_updater -mindepth 1 -delete
@@ -79,12 +78,27 @@ mkdir -p /private/tmp/nice_updater/files/Library/Scripts/
 mkdir -p /private/tmp/nice_updater/scripts
 mkdir -p "$PWD/build"
 
-# Create/modify the main preference file
-if [[ -e "$PWD/$preferenceFileName" ]]; then
-    /usr/libexec/PlistBuddy -c Clear "$PWD/$preferenceFileName"
-fi
+# Create/modify the main Daemon plist
+[[ -e "$PWD/$mainDaemonFileName" ]] && /usr/libexec/PlistBuddy -c Clear "$PWD/$mainDaemonFileName" &> /dev/null
+defaults write "$PWD/$mainDaemonFileName" Label -string "$identifier"
+/usr/libexec/PlistBuddy -c "Add :ProgramArguments array" "$PWD/$mainDaemonFileName"
+/usr/bin/plutil -insert ProgramArguments.0 -string "/bin/bash" "$PWD/$mainDaemonFileName"
+/usr/bin/plutil -insert ProgramArguments.1 -string "/Library/Scripts/nice_updater.sh" "$PWD/$mainDaemonFileName"
+/usr/bin/plutil -insert ProgramArguments.2 -string "main" "$PWD/$mainDaemonFileName"
+defaults write "$PWD/$mainDaemonFileName" StartInterval -int "$startInterval"
 
-# Populate our variables into the plist
+# Create/modify the on_demand Daemon plist
+[[ -e "$PWD/$onDemainDaemonFileName" ]] && /usr/libexec/PlistBuddy -c Clear "$PWD/$onDemainDaemonFileName" &> /dev/null
+defaults write "$PWD/$onDemainDaemonFileName" Label -string "$onDemandDaemonIdentifier"
+/usr/libexec/PlistBuddy -c "Add :ProgramArguments array" "$PWD/$onDemainDaemonFileName"
+/usr/bin/plutil -insert ProgramArguments.0 -string "/bin/bash" "$PWD/$onDemainDaemonFileName"
+/usr/bin/plutil -insert ProgramArguments.1 -string "/Library/Scripts/nice_updater.sh" "$PWD/$onDemainDaemonFileName"
+/usr/bin/plutil -insert ProgramArguments.2 -string "on_demand" "$PWD/$onDemainDaemonFileName"
+/usr/libexec/PlistBuddy -c "Add :WatchPaths array" "$PWD/$onDemainDaemonFileName"
+/usr/bin/plutil -insert WatchPaths.0 -string "/Library/Preferences/${identifier}_trigger.plist" "$PWD/$onDemainDaemonFileName"
+
+# Create/modify the main preference file
+[[ -e "$PWD/$preferenceFileName" ]] && /usr/libexec/PlistBuddy -c Clear "$PWD/$preferenceFileName" &> /dev/null
 defaults write "$PWD/$preferenceFileName" UpdateInProgressTitle -string "$updateInProgressTitle"
 defaults write "$PWD/$preferenceFileName" UpdateInProgressMessage -string "$updateInProgressMessage"
 defaults write "$PWD/$preferenceFileName" LoginAfterUpdatesInProgressMessage -string "$loginAfterUpdatesInProgressMessage"
