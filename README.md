@@ -4,7 +4,8 @@ A tool to update macOS that (nicely) gives the user several chances to install u
 ## Requirements
 ### yo.app
 - [yo.app](https://github.com/sheagcraig/yo) is required to display the Notification Center alerts. The alerts that yo.app create are persistent, and you can specify custom buttons which apply an action. This is used to allow the user to either cancel the alert, or install updates from there easily. *See [Jamf Pro Requirements](https://github.com/ryangball/nice-updater#jamf-pro-requirements) for related information.
-- You can download a release .pkg of yo.app [here](https://github.com/sheagcraig/yo/releases). There is also info on how to customize the yo.app default icon [here](https://github.com/sheagcraig/yo#icons).
+- To avoid packaging yo.app for use in your Jamf Pro environment, you can configure a Jamf Pro policy with "Execution Frequency" set to "Ongoing", triggered by a custom event called "yo" which runs [install_latest_yo.sh](https://github.com/ryangball/nice-updater/blob/master/install_latest_yo.sh) as a payload.
+- Alternatively you can download a release .pkg of yo.app [here](https://github.com/sheagcraig/yo/releases). There is also info on how to customize the yo.app default icon [here](https://github.com/sheagcraig/yo#icons).
 
 ### Jamf Pro Requirements
 *Note: There are no Jamf Pro policies required in order for this tool to function (if yo.app is installed). However, I use Jamf Pro to manage Macs. Consequently, I've created this minimally leveraging Jamf Pro. You could easily adapt this for use in other environments.*
@@ -14,22 +15,19 @@ A tool to update macOS that (nicely) gives the user several chances to install u
 
 ## Build the Project into a .PKG
 To build new versions you can simply run the build.sh script and specify a version number for the .pkg. The resulting .pkg will include the LaunchDaemons and target script as well as necessary preinstall/postinstall scripts. If you do not include a version number as a parameter then version 1.0 will be assigned as the default.
-```
-$ git clone https://github.com/ryangball/nice-updater.git
-$ cd nice-updater
-$ ./build.sh 1.5
-Version set to 1.5
-Building the .pkg in /Users/ryangball/nice-updater/build/
-Revealing Nice_Updater_1.5.pkg in Finder
+```bash
+git clone https://github.com/ryangball/nice-updater.git
+cd nice-updater
+./build.sh 1.5
 ```
 
 ## Testing
 If you [build](https://github.com/ryangball/nice-updater#build-the-project-into-a-pkg) the .pkg or download one of the [releases](https://github.com/ryangball/nice-updater/releases), after installation you can start the LaunchDaemon to begin:
-```
+```bash
 sudo launchctl start com.github.ryangball.nice_updater
 ```
 Tail the log to see the current state:
-```
+```bash
 tail -f /Library/Logs/Nice_Updater.log
 ```
 You can do this several times to see the entire alerting/force-update workflow.
@@ -56,7 +54,7 @@ You can also specify the number of days to delay the process after an update che
 
 ### Blocking Updates
 If you want to block updates from running during a certain period, you can write a "updates_blocked" key with a boolean value of "true" to the main preference file (/Library/Preferences/com.github.ryangball.nice_updater.plist).
-```
+```bash
 defaults write /Library/Preferences/com.github.ryangball.nice_updater.plist updates_blocked -bool true
 ```
 To reverse this setting simply set the key value to false or delete the key.
@@ -90,3 +88,6 @@ When a user is alerted via one of the persistent Notification Center alerts, the
 To address this issue, when the user is alerted a random key string is generated and stored. This key is then simultaneously written to the main preference file and to the command that gets executed if and when the user clicks the "Install Now" button. Once the user clicks the "Install Now" button, that key is then written to a second preference file and used later in the process. I call this second preference file the "trigger".
 
 The second LaunchDaemon (com.github.ryangball.nice_updater_on_demand) runs the on_demand function of the script. This LaunchDaemon is configured with a "WatchPaths" key, and is set to execute the LaunchDaemon when the trigger file is modified in any way. Because the user has access to modify this trigger file at any time (if they know where to look) a mechanism was put in place to validate that the LaunchDaemon should in fact be running. Since the update key was stored in the main preference file, we can compare it with the key that will be written to the trigger file, and if they match the update process will continue. If the keys don't match, meaning the trigger file was modified by the user without clicking the "Install Now" button, the process will exit without action. This allows us to avoid potentially updating the system when a user inadvertently modifies the trigger file.
+
+## Special Thanks
+[kurtroberts](https://github.com/kurtroberts) - For [install_latest_yo.sh](https://github.com/ryangball/nice-updater/blob/master/install_latest_yo.sh)

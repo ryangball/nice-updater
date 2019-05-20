@@ -13,7 +13,7 @@ chmod 644 "$mainOnDemandDaemonPlist"
 chown root:wheel "$preferenceFileFullPath"
 chmod 644 "$preferenceFileFullPath"
 chown root:wheel /Library/Scripts/nice_updater.sh
-chmod 755 Library/Scripts/nice_updater.sh
+chmod 755 /Library/Scripts/nice_updater.sh
 
 # Start our LaunchDaemons
 /bin/launchctl load -w "$mainDaemonPlist"
