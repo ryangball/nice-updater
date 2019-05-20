@@ -12,7 +12,7 @@
 	</array>
 	<key>WatchPaths</key>
 	<array>
-		<string>/Library/Preferences/com.github.ryangball.nice_updater_trigger.plist</string>
+		<string>/Library/Preferences/com.github.ryangball.nice_updater.trigger.plist</string>
 	</array>
 </dict>
 </plist>

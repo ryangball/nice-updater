@@ -92,7 +92,7 @@ defaults write "$PWD/$onDemainDaemonFileName" Label -string "$onDemandDaemonIden
 /usr/bin/plutil -insert ProgramArguments.1 -string "/Library/Scripts/nice_updater.sh" "$PWD/$onDemainDaemonFileName"
 /usr/bin/plutil -insert ProgramArguments.2 -string "on_demand" "$PWD/$onDemainDaemonFileName"
 /usr/libexec/PlistBuddy -c "Add :WatchPaths array" "$PWD/$onDemainDaemonFileName"
-/usr/bin/plutil -insert WatchPaths.0 -string "/Library/Preferences/${identifier}_trigger.plist" "$PWD/$onDemainDaemonFileName"
+/usr/bin/plutil -insert WatchPaths.0 -string "$watchPathsPlist" "$PWD/$onDemainDaemonFileName"
 
 # Create/modify the main preference file
 [[ -e "$PWD/$preferenceFileName" ]] && /usr/libexec/PlistBuddy -c Clear "$PWD/$preferenceFileName" &> /dev/null
