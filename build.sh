@@ -68,7 +68,7 @@ sed -i '' "s#preferenceFileFullPath=.*#preferenceFileFullPath=\"$preferenceFileF
 sed -i '' "s#yoPath=.*#yoPath=\"$yoPath\"#" "$PWD/preinstall.sh"
 
 # Create clean temp build directories
-find /private/tmp/nice_updater -mindepth 1 -delete
+find /private/tmp/nice_updater -mindepth 1 -delete &> /dev/null
 mkdir -p /private/tmp/nice_updater/files/Library/LaunchDaemons
 mkdir -p /private/tmp/nice_updater/files/Library/Preferences
 mkdir -p /private/tmp/nice_updater/files/Library/Scripts/

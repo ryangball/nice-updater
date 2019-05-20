@@ -33,7 +33,7 @@ tail -f /Library/Logs/Nice_Updater.log
 You can do this several times to see the entire alerting/force-update workflow.
 
 ## Workflow and Options
-The nice_updater.sh script is not intended to be executed by simply running the script. It is intended to be executed by passing a parameter into it indicating which function to run. If you do not specify a function, then the script just exits. As an example the primary LaunchDaemon executes the script in this fashion: `bash /Library/Scripts/nice_updater main`. "Main" indicates the function that is being run.
+The nice_updater.sh script is not intended to be executed by simply running the script. It is intended to be executed by passing a parameter into it indicating which function to run. If you do not specify a function, then the script just exits. As an example the primary LaunchDaemon executes the script in this fashion: `/bin/bash /Library/Scripts/nice_updater main`. "Main" indicates the function that is being run.
 
 The primary LaunchDaemon is scheduled to be run every two hours (7200 seconds). What happens when it runs is determined by a few things:
 ### When a User is Not Logged In
