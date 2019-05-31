@@ -85,7 +85,7 @@ function trigger_updates () {
     # 10.11 and above allows you to skip the update scan, so we can do that since we already scanned for updates initially
     [[ "$osMinorVersion" -ge 11 ]] && noScan='--no-scan'
     # shellcheck disable=SC2086
-    /usr/sbin/softwareupdate --install $1 "$noScan" | \
+    /usr/sbin/softwareupdate --install --restart $1 "$noScan" | \
         grep --line-buffered -v -E 'Software Update Tool|Copyright|Finding|Downloaded|Done\.|You have installed one|Please restart immediately\.|^$' | \
         while read -r LINE; do writelog "$LINE"; done
     sleep 5
@@ -148,7 +148,7 @@ function alert_logic () {
         writelog "Installing updates that DO require a restart..."
         trigger_updates "--recommended --restart"
         record_last_full_update
-        # initiate_restart
+        initiate_restart
     else
         ((notificationCount++))
         notificationsLeft="$((maxNotificationCount - notificationCount))"
@@ -192,9 +192,10 @@ function update_check () {
                 if [[ ! "$loggedInUser" == "root" ]] && [[ -n "$loggedInUser" ]]; then
                     writelog "$loggedInUser has logged in since we started to install updates, alerting them of pending restart."
                     "$JAMFHELPER" -windowType utility -lockHUD -title "$updateInProgressTitle" -alignHeading center -alignDescription natural -description "$loginAfterUpdatesInProgressMessage" -icon "$icon" -iconSize 100 -timeout "60"
-                # else
-                #     # Still nobody is logged in, restart
-                #     initiate_restart
+                    initiate_restart
+                else
+                    # Still nobody is logged in, restart
+                    initiate_restart
                 fi
             fi
             # Getting here means a user is logged in, alert them that they will need to install and restart
@@ -233,7 +234,7 @@ on_demand () {
         writelog "Installing updates that DO require a restart..."
         trigger_updates "--recommended --restart"
         record_last_full_update
-        # initiate_restart
+        initiate_restart
     fi
 }
 
