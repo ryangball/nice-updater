@@ -146,9 +146,9 @@ function alert_logic () {
         "$JAMFHELPER" -windowType utility -lockHUD -title "$updateInProgressTitle" -alignHeading center -alignDescription natural -description "$updateInProgressMessage" -icon "$icon" -iconSize 100 &
         jamfHelperPID=$(echo $!)
         writelog "Installing updates that DO require a restart..."
-        trigger_updates "--recommended"
+        trigger_updates "--recommended --restart"
         record_last_full_update
-        initiate_restart
+        # initiate_restart
     else
         ((notificationCount++))
         notificationsLeft="$((maxNotificationCount - notificationCount))"
@@ -185,17 +185,16 @@ function update_check () {
             if [[ "$loggedInUser" == "root" ]] || [[ -z "$loggedInUser" ]]; then
                 writelog "No user logged in."
                 writelog "Installing updates that DO require a restart..."
-                trigger_updates "--recommended"
+                trigger_updates "--recommended --restart"
                 record_last_full_update
                 # Some time has passed since we started to install the updates, check for a logged in user once more
                 loggedInUser=$(/usr/bin/python -c 'from SystemConfiguration import SCDynamicStoreCopyConsoleUser; import sys; username = (SCDynamicStoreCopyConsoleUser(None, None, None) or [None])[0]; username = [username,""][username in [u"loginwindow", None, u""]]; sys.stdout.write(username + "\n");')
                 if [[ ! "$loggedInUser" == "root" ]] && [[ -n "$loggedInUser" ]]; then
                     writelog "$loggedInUser has logged in since we started to install updates, alerting them of pending restart."
                     "$JAMFHELPER" -windowType utility -lockHUD -title "$updateInProgressTitle" -alignHeading center -alignDescription natural -description "$loginAfterUpdatesInProgressMessage" -icon "$icon" -iconSize 100 -timeout "60"
-                    initiate_restart
-                else
-                    # Still nobody is logged in, restart
-                    initiate_restart
+                # else
+                #     # Still nobody is logged in, restart
+                #     initiate_restart
                 fi
             fi
             # Getting here means a user is logged in, alert them that they will need to install and restart
@@ -232,9 +231,9 @@ on_demand () {
         "$JAMFHELPER" -windowType utility -lockHUD -title "$updateInProgressTitle" -alignHeading center -alignDescription natural -description "$updateInProgressMessage" -icon "$icon" -iconSize 100 &
         jamfHelperPID=$(echo $!)
         writelog "Installing updates that DO require a restart..."
-        trigger_updates "--recommended"
+        trigger_updates "--recommended --restart"
         record_last_full_update
-        initiate_restart
+        # initiate_restart
     fi
 }
 
