@@ -5,8 +5,8 @@ This fork removes the requirement for the Yo.app and uses the `jamfHelper` tool 
 
 ## Requirements
 ### Jamf Pro Requirements
-*Note: There are no Jamf Pro policies required in order for this tool to function (if yo.app is installed). However, I use Jamf Pro to manage Macs. Consequently, I've created this minimally leveraging Jamf Pro. You could easily adapt this for use in other environments.*
-- jamfHelper is used to display the user dialogs when updates are being installed.
+*Note: There are no Jamf Pro policies required in order for this tool to function. However, I use Jamf Pro to manage Macs. Consequently, I've created this minimally leveraging Jamf Pro. You could easily adapt this for use in other environments.*
+- jamfHelper is used to display the user dialogs when updates are required or are being installed.
 - The Jamf Binary is used to reboot the Mac (if required).
 
 ## Build the Project into a .PKG
@@ -78,7 +78,7 @@ Once the user has received their final alert and they do not choose to install, 
 ![img-3](images/updates_in_progress_message.png)
 
 ## What's With Two LaunchDaemons?
-When a user is alerted via one of the persistent Notification Center alerts, the user has the option to install updates now. This is done through the yo.app action button, which in this case is the "Install Now" button. These actions are performed as the user, meaning that actions which require root permissions could not be performed when a standard user is clicking the "Install Now" button.
+When a user is alerted via one of the jamfHelper alerts, the user has the option to install updates now. This is done through the jamfHelper default action button, which in this case is the "Install Now" button. These actions are performed as the user, meaning that actions which require root permissions could not be performed when a standard user is clicking the "Install Now" button.
 
 To address this issue, when the user is alerted a random key string is generated and stored. This key is then simultaneously written to the main preference file and to the command that gets executed if and when the user clicks the "Install Now" button. Once the user clicks the "Install Now" button, that key is then written to a second preference file and used later in the process. I call this second preference file the "trigger".
 
