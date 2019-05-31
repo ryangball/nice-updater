@@ -24,10 +24,10 @@ afterFullUpdateDelayDayCount="14"
 afterEmptyUpdateDelayDayCount="3"
 
 # The number of times to alert a single user prior to forcibly installing updates
-maxNotificationCount="3"
+maxNotificationCount="10"
 
 # The full path of the yo.app binary
-yo="/Applications/Utilities/yo.app/Contents/MacOS/yo"
+# yo="/Applications/Utilities/yo.app/Contents/MacOS/yo"
 
 # The full path of the preference file which will store update information
 # If you modify this you need to modify the LaunchDaemon plists as well
@@ -48,7 +48,7 @@ osVersion=$(sw_vers -productVersion)
 osMinorVersion=$(echo "$osVersion" | awk -F. '{print $2}')
 [[ "$osMinorVersion" -le 12 ]] && icon="/System/Library/CoreServices/Software Update.app/Contents/Resources/SoftwareUpdate.icns"
 [[ "$osMinorVersion" -ge 13 ]] && icon="/System/Library/CoreServices/Install Command Line Developer Tools.app/Contents/Resources/SoftwareUpdate.icns"
-
+JAMFHELPER="/Library/Application Support/JAMF/bin/jamfHelper.app/Contents/MacOS/jamfHelper"
 function writelog () {
     DATE=$(date +%Y-%m-%d\ %H:%M:%S)
     /bin/echo "${1}"
@@ -103,7 +103,7 @@ function compare_date () {
 function alert_user () {
     local subtitle="$1"
     [[ "$notificationsLeft" == "1" ]] && local subtitle="1 remaining alert before auto-install."
-    [[ "$notificationsLeft" == "0" ]] && local subtitle="Install now to avoid interruptions."
+    [[ "$notificationsLeft" == "0" ]] && local subtitle="No deferrals remaining! Click on \"Install Now\" to proceed"
 
     writelog "Stopping NiceUpdater On-Demand LaunchDaemon..."
     launchctl unload -w "/Library/LaunchDaemons/$mainLDPlist"
@@ -120,8 +120,19 @@ function alert_user () {
     launchctl load -w "/Library/LaunchDaemons/$mainLDPlist"
 
     writelog "Notifying $loggedInUser of available updates..."
-    /bin/launchctl asuser "$loggedInUID" "$yo" -t "Software Updates Required" -s "$subtitle" -n "Mac will restart after installation." \
-        -o "Cancel" -b "Install Now" -B "defaults write $watchPathsPlist update_key $updateKey"
+    helperTitle="Software Updates Required"
+    helperDesc="Updates are required to be installed on this Mac which require a restart. The Mac will restart after installation."
+    if [[ "$notificationsLeft" == "0" ]]; then
+        helperExitCode=$( "$JAMFHELPER" -windowType utility -title "$helperTitle" -heading "$subtitle" -description "$helperDesc" -button1 "Install Now" -button2 "Cancel" -defaultButton 1 -cancelButton 2 -timeout 99999 -icon "$icon" -iconSize 100 )
+    else
+        helperExitCode=$( "$JAMFHELPER" -windowType utility -lockHUD -title "$helperTitle" -heading "$subtitle" -description "$helperDesc" -button1 "Install Now" -defaultButton 1 -timeout 99999 -icon "$icon" -iconSize 100 )
+    fi
+    writelog "Response: $helperExitCode"
+    if [[ $helperExitCode == 0 ]]; then
+        writelog "User initiated installation."
+        defaults write $watchPathsPlist update_key $updateKey
+    fi
+
     /usr/libexec/PlistBuddy -c "Add :users dict" $mainPreferencePlist 2> /dev/null
     /usr/libexec/PlistBuddy -c "Delete :users:$loggedInUser" $mainPreferencePlist 2> /dev/null
     /usr/libexec/PlistBuddy -c "Add :users:$loggedInUser dict" $mainPreferencePlist
@@ -132,7 +143,7 @@ function alert_logic () {
     notificationCount=$(/usr/libexec/PlistBuddy -c "Print :users:$loggedInUser:alert_count" $mainPreferencePlist 2> /dev/null | xargs)
     if [[ "$notificationCount" -ge "$maxNotificationCount" ]]; then
         writelog "$loggedInUser has been notified $notificationCount times; not waiting any longer."
-        /Library/Application\ Support/JAMF/bin/jamfHelper.app/Contents/MacOS/jamfHelper -windowType utility -lockHUD -title "$updateInProgressTitle" -alignHeading center -alignDescription natural -description "$updateInProgressMessage" -icon "$icon" -iconSize 100 &
+        "$JAMFHELPER" -windowType utility -lockHUD -title "$updateInProgressTitle" -alignHeading center -alignDescription natural -description "$updateInProgressMessage" -icon "$icon" -iconSize 100 &
         jamfHelperPID=$(echo $!)
         writelog "Installing updates that DO require a restart..."
         trigger_updates "--recommended"
@@ -180,7 +191,7 @@ function update_check () {
                 loggedInUser=$(/usr/bin/python -c 'from SystemConfiguration import SCDynamicStoreCopyConsoleUser; import sys; username = (SCDynamicStoreCopyConsoleUser(None, None, None) or [None])[0]; username = [username,""][username in [u"loginwindow", None, u""]]; sys.stdout.write(username + "\n");')
                 if [[ ! "$loggedInUser" == "root" ]] && [[ -n "$loggedInUser" ]]; then
                     writelog "$loggedInUser has logged in since we started to install updates, alerting them of pending restart."
-                    /Library/Application\ Support/JAMF/bin/jamfHelper.app/Contents/MacOS/jamfHelper -windowType utility -lockHUD -title "$updateInProgressTitle" -alignHeading center -alignDescription natural -description "$loginAfterUpdatesInProgressMessage" -icon "$icon" -iconSize 100 -timeout "60"
+                    "$JAMFHELPER" -windowType utility -lockHUD -title "$updateInProgressTitle" -alignHeading center -alignDescription natural -description "$loginAfterUpdatesInProgressMessage" -icon "$icon" -iconSize 100 -timeout "60"
                     initiate_restart
                 else
                     # Still nobody is logged in, restart
@@ -218,7 +229,7 @@ on_demand () {
         finish 0
     else
         writelog "On-Demand Update Keys match; continuing."
-        /Library/Application\ Support/JAMF/bin/jamfHelper.app/Contents/MacOS/jamfHelper -windowType utility -lockHUD -title "$updateInProgressTitle" -alignHeading center -alignDescription natural -description "$updateInProgressMessage" -icon "$icon" -iconSize 100 &
+        "$JAMFHELPER" -windowType utility -lockHUD -title "$updateInProgressTitle" -alignHeading center -alignDescription natural -description "$updateInProgressMessage" -icon "$icon" -iconSize 100 &
         jamfHelperPID=$(echo $!)
         writelog "Installing updates that DO require a restart..."
         trigger_updates "--recommended"
