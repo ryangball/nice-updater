@@ -10,17 +10,21 @@ This fork removes the requirement for the Yo.app and uses the `jamfHelper` tool 
 - The Jamf Binary is used to reboot the Mac (if required).
 
 ## Build the Project into a .PKG
-To build new versions you can simply run the build.sh script and specify a version number for the .pkg. The resulting .pkg will include the LaunchDaemons and target script as well as necessary preinstall/postinstall scripts. If you do not include a version number as a parameter then version 1.0 will be assigned as the default.
+To build new versions you can simply run the `build.sh` script and specify a version number for the `.pkg`. The resulting `.pkg` will include the LaunchDaemons and target script as well as necessary preinstall/postinstall scripts. If you do not include a version number as a parameter then version 1.0 will be assigned as the default.
+
+You can customise the settings of the script within `build.sh`. For instance, you can change the default time between script runs, and you can change the identifier of the preferences files.
+
 ```bash
-git clone https://github.com/ryangball/nice-updater.git
+git clone https://github.com/grahampugh/nice-updater.git
 cd nice-updater
+# (edit build.sh to suit your settings)
 ./build.sh 1.5
 ```
 
 ## Testing
-If you [build](https://github.com/ryangball/nice-updater#build-the-project-into-a-pkg) the .pkg or download one of the [releases](https://github.com/ryangball/nice-updater/releases), after installation you can start the LaunchDaemon to begin:
+If you [build](https://github.com/ryangball/nice-updater#build-the-project-into-a-pkg) the .pkg or download one of the [releases](https://github.com/grahampugh/nice-updater/releases), after installation you can start the LaunchDaemon to begin:
 ```bash
-sudo launchctl start com.github.ryangball.nice_updater
+sudo launchctl start com.github.grahampugh.nice_updater
 ```
 Tail the log to see the current state:
 ```bash
@@ -29,7 +33,7 @@ tail -f /Library/Logs/Nice_Updater.log
 You can do this several times to see the entire alerting/force-update workflow.
 
 ## Workflow and Options
-The nice_updater.sh script is not intended to be executed by simply running the script. It is intended to be executed by passing a parameter into it indicating which function to run. If you do not specify a function, then the script just exits. As an example the primary LaunchDaemon executes the script in this fashion: `/bin/bash /Library/Scripts/nice_updater main`. "Main" indicates the function that is being run.
+The `nice_updater.sh` script is not intended to be executed by simply running the script. It is intended to be executed by passing a parameter into it indicating which function to run. If you do not specify a function, then the script just exits. As an example the primary LaunchDaemon executes the script in this fashion: `/bin/bash /Library/Scripts/nice_updater main`. "Main" indicates the function that is being run.
 
 The primary LaunchDaemon is scheduled to be run every 24 hours (86400 seconds). What happens when it runs is determined by a few things:
 
@@ -50,9 +54,10 @@ By default, after a full update has been performed (all updates available are in
 You can also specify the number of days to delay the process after an update check occurs where no updates were found (default is 3). This delay will ensure that we are not checking for updates all day long if there are no updates found in the morning. This is also a good way to stagger updates out over your entire fleet.
 
 ### Blocking Updates
-If you want to block updates from running during a certain period, you can write a "updates_blocked" key with a boolean value of "true" to the main preference file (/Library/Preferences/com.github.ryangball.nice_updater.plist).
+If you want to block updates from running during a certain period, you can write a "updates_blocked" key with a boolean value of "true" to the main preference file (/Library/Preferences/com.github.grahampugh.nice_updater.plist).
+
 ```bash
-defaults write /Library/Preferences/com.github.ryangball.nice_updater.plist updates_blocked -bool true
+defaults write /Library/Preferences/com.github.grahampugh.nice_updater.plist updates_blocked -bool true
 ```
 To reverse this setting simply set the key value to false or delete the key.
 
@@ -79,4 +84,4 @@ When a user is alerted via one of the jamfHelper alerts, the user has the option
 
 To address this issue, when the user is alerted a random key string is generated and stored. This key is then simultaneously written to the main preference file and to the command that gets executed if and when the user clicks the "Install Now" button. Once the user clicks the "Install Now" button, that key is then written to a second preference file and used later in the process. I call this second preference file the "trigger".
 
-The second LaunchDaemon (com.github.ryangball.nice_updater_on_demand) runs the on_demand function of the script. This LaunchDaemon is configured with a "WatchPaths" key, and is set to execute the LaunchDaemon when the trigger file is modified in any way. Because the user has access to modify this trigger file at any time (if they know where to look) a mechanism was put in place to validate that the LaunchDaemon should in fact be running. Since the update key was stored in the main preference file, we can compare it with the key that will be written to the trigger file, and if they match the update process will continue. If the keys don't match, meaning the trigger file was modified by the user without clicking the "Install Now" button, the process will exit without action. This allows us to avoid potentially updating the system when a user inadvertently modifies the trigger file.
+The second LaunchDaemon (com.github.grahampugh.nice_updater_on_demand) runs the on_demand function of the script. This LaunchDaemon is configured with a "WatchPaths" key, and is set to execute the LaunchDaemon when the trigger file is modified in any way. Because the user has access to modify this trigger file at any time (if they know where to look) a mechanism was put in place to validate that the LaunchDaemon should in fact be running. Since the update key was stored in the main preference file, we can compare it with the key that will be written to the trigger file, and if they match the update process will continue. If the keys don't match, meaning the trigger file was modified by the user without clicking the "Install Now" button, the process will exit without action. This allows us to avoid potentially updating the system when a user inadvertently modifies the trigger file.
