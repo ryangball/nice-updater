@@ -22,7 +22,7 @@ osVersion=$(sw_vers -productVersion)
 osMinorVersion=$(echo "$osVersion" | awk -F. '{print $2}')
 [[ "$osMinorVersion" -le 12 ]] && icon="/System/Library/CoreServices/Software Update.app/Contents/Resources/SoftwareUpdate.icns"
 [[ "$osMinorVersion" -ge 13 ]] && icon="/System/Library/CoreServices/Install Command Line Developer Tools.app/Contents/Resources/SoftwareUpdate.icns"
-
+JAMFHELPER="/Library/Application Support/JAMF/bin/jamfHelper.app/Contents/MacOS/jamfHelper"
 function writelog () {
     DATE=$(date +%Y-%m-%d\ %H:%M:%S)
     /bin/echo "${1}"
@@ -87,7 +87,7 @@ function compare_date () {
 function alert_user () {
     local subtitle="$1"
     [[ "$notificationsLeft" == "1" ]] && local subtitle="1 remaining alert before auto-install."
-    [[ "$notificationsLeft" == "0" ]] && local subtitle="Install now to avoid interruptions."
+    [[ "$notificationsLeft" == "0" ]] && local subtitle="No deferrals remaining! Click on \"Install Now\" to proceed"
 
     writelog "Stopping NiceUpdater On-Demand LaunchDaemon..."
     launchctl unload -w "$mainOnDemandDaemonPlist"
@@ -104,8 +104,19 @@ function alert_user () {
     launchctl load -w "$mainOnDemandDaemonPlist"
 
     writelog "Notifying $loggedInUser of available updates..."
-    /bin/launchctl asuser "$loggedInUID" "$yoPath" -t "Software Updates Required" -s "$subtitle" -n "Mac will restart after installation." \
-        -o "Cancel" -b "Install Now" -B "/usr/bin/defaults write $watchPathsPlist update_key -string $updateKey" --ignores-do-not-disturb
+    helperTitle="Software Updates Required"
+    helperDesc="Updates are required to be installed on this Mac which require a restart. The Mac will restart after installation."
+    if [[ "$notificationsLeft" == "0" ]]; then
+        helperExitCode=$( "$JAMFHELPER" -windowType utility -lockHUD -title "$helperTitle" -heading "$subtitle" -description "$helperDesc" -button1 "Install Now" -defaultButton 1 -timeout 99999 -icon "$icon" -iconSize 100 )
+    else
+        helperExitCode=$( "$JAMFHELPER" -windowType utility -title "$helperTitle" -heading "$subtitle" -description "$helperDesc" -button1 "Install Now" -button2 "Cancel" -defaultButton 1 -cancelButton 2 -timeout 99999 -icon "$icon" -iconSize 100 )
+    fi
+    writelog "Response: $helperExitCode"
+    if [[ $helperExitCode == 0 ]]; then
+        writelog "User initiated installation."
+        defaults write $watchPathsPlist update_key $updateKey
+    fi
+
     /usr/libexec/PlistBuddy -c "Add :users dict" $preferenceFileFullPath 2> /dev/null
     /usr/libexec/PlistBuddy -c "Delete :users:$loggedInUser" $preferenceFileFullPath 2> /dev/null
     /usr/libexec/PlistBuddy -c "Add :users:$loggedInUser dict" $preferenceFileFullPath
@@ -116,10 +127,10 @@ function alert_logic () {
     notificationCount=$(/usr/libexec/PlistBuddy -c "Print :users:$loggedInUser:alert_count" $preferenceFileFullPath 2> /dev/null | xargs)
     if [[ "$notificationCount" -ge "$maxNotificationCount" ]]; then
         writelog "$loggedInUser has been notified $notificationCount times; not waiting any longer."
-        /Library/Application\ Support/JAMF/bin/jamfHelper.app/Contents/MacOS/jamfHelper -windowType utility -lockHUD -title "$updateInProgressTitle" -alignHeading center -alignDescription natural -description "$updateInProgressMessage" -icon "$icon" -iconSize 100 &
+        "$JAMFHELPER" -windowType utility -lockHUD -title "$updateInProgressTitle" -alignHeading center -alignDescription natural -description "$updateInProgressMessage" -icon "$icon" -iconSize 100 &
         jamfHelperPID=$(echo $!)
         writelog "Installing updates that DO require a restart..."
-        trigger_updates "--recommended"
+        trigger_updates "--recommended --restart"
         record_last_full_update
         initiate_restart
     else
@@ -158,13 +169,13 @@ function update_check () {
             if [[ "$loggedInUser" == "root" ]] || [[ -z "$loggedInUser" ]]; then
                 writelog "No user logged in."
                 writelog "Installing updates that DO require a restart..."
-                trigger_updates "--recommended"
+                trigger_updates "--recommended --restart"
                 record_last_full_update
                 # Some time has passed since we started to install the updates, check for a logged in user once more
                 loggedInUser=$(/usr/bin/python -c 'from SystemConfiguration import SCDynamicStoreCopyConsoleUser; import sys; username = (SCDynamicStoreCopyConsoleUser(None, None, None) or [None])[0]; username = [username,""][username in [u"loginwindow", None, u""]]; sys.stdout.write(username + "\n");')
                 if [[ ! "$loggedInUser" == "root" ]] && [[ -n "$loggedInUser" ]]; then
                     writelog "$loggedInUser has logged in since we started to install updates, alerting them of pending restart."
-                    /Library/Application\ Support/JAMF/bin/jamfHelper.app/Contents/MacOS/jamfHelper -windowType utility -lockHUD -title "$updateInProgressTitle" -alignHeading center -alignDescription natural -description "$loginAfterUpdatesInProgressMessage" -icon "$icon" -iconSize 100 -timeout "60"
+                    "$JAMFHELPER" -windowType utility -lockHUD -title "$updateInProgressTitle" -alignHeading center -alignDescription natural -description "$loginAfterUpdatesInProgressMessage" -icon "$icon" -iconSize 100 -timeout "60"
                     initiate_restart
                 else
                     # Still nobody is logged in, restart
@@ -197,12 +208,12 @@ on_demand () {
     writelog "Verifying On-Demand Update Key..."
     storedUpdateKeys=$(/usr/libexec/PlistBuddy -c "Print update_key" $preferenceFileFullPath | sed -e 1d -e '$d' | sed 's/^ *//')
     testUpdateKey=$(defaults read $watchPathsPlist update_key)
-    if [[ -n "$testUpdateKey" ]] && [[ "$storedUpdateKeys" == *"$testUpdateKey"* ]]; then
-        writelog "On-Demand Update Key confirmed; continuing."
-        /Library/Application\ Support/JAMF/bin/jamfHelper.app/Contents/MacOS/jamfHelper -windowType utility -lockHUD -title "$updateInProgressTitle" -alignHeading center -alignDescription natural -description "$updateInProgressMessage" -icon "$icon" -iconSize 100 &
+if [[ -n "$testUpdateKey" ]] && [[ "$storedUpdateKeys" == *"$testUpdateKey"* ]]; then
+    writelog "On-Demand Update Key confirmed; continuing."
+        "$JAMFHELPER" -windowType utility -lockHUD -title "$updateInProgressTitle" -alignHeading center -alignDescription natural -description "$updateInProgressMessage" -icon "$icon" -iconSize 100 &
         jamfHelperPID=$(echo $!)
         writelog "Installing updates that DO require a restart..."
-        trigger_updates "--recommended"
+        trigger_updates "--recommended --restart"
         record_last_full_update
         initiate_restart
     else

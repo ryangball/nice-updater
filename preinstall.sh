@@ -1,5 +1,6 @@
 #!/bin/bash
 
+<<<<<<< HEAD
 # These variables will be automagically updated if you run build.sh, no need to modify them
 mainDaemonPlist="/Library/LaunchDaemons/com.github.ryangball.nice_updater.plist"
 mainOnDemandDaemonPlist="/Library/LaunchDaemons/com.github.ryangball.nice_updater_on_demand.plist"
@@ -15,6 +16,8 @@ if [[ ! -e "$yoPath" ]]; then
     fi
 fi
 
+=======
+>>>>>>> master
 # Stop our LaunchDaemons
 /bin/launchctl unload -w "$mainOnDemandDaemonPlist"
 /bin/launchctl unload -w "$mainDaemonPlist"
