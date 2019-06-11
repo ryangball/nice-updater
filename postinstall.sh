@@ -19,4 +19,4 @@ chmod 755 /Library/Scripts/nice_updater.sh
 /bin/launchctl load -w "$mainDaemonPlist"
 /bin/launchctl load -w "$mainOnDemandDaemonPlist"
 
-exit 0
+/bin/launchctl start com.github.grahampugh.nice_updater
