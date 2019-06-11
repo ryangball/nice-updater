@@ -11,28 +11,25 @@ This fork removes the requirement for the Yo.app and uses the `jamfHelper` tool 
 
 ## Build the Project into a .PKG
 To build new versions you can simply run the build.sh script and specify a version number for the .pkg. The resulting .pkg will include the LaunchDaemons and target script as well as necessary preinstall/postinstall scripts. If you do not include a version number as a parameter then version 1.0 will be assigned as the default.
-```
-$ git clone https://github.com/ryangball/nice-updater.git
-$ cd nice-updater
-$ ./build.sh 1.5
-Version set to 1.5
-Building the .pkg in /Users/ryangball/nice-updater/build/
-Revealing Nice_Updater_1.5.pkg in Finder
+```bash
+git clone https://github.com/ryangball/nice-updater.git
+cd nice-updater
+./build.sh 1.5
 ```
 
 ## Testing
 If you [build](https://github.com/ryangball/nice-updater#build-the-project-into-a-pkg) the .pkg or download one of the [releases](https://github.com/ryangball/nice-updater/releases), after installation you can start the LaunchDaemon to begin:
-```
+```bash
 sudo launchctl start com.github.ryangball.nice_updater
 ```
 Tail the log to see the current state:
-```
+```bash
 tail -f /Library/Logs/Nice_Updater.log
 ```
 You can do this several times to see the entire alerting/force-update workflow.
 
 ## Workflow and Options
-The nice_updater.sh script is not intended to be executed by simply running the script. It is intended to be executed by passing a parameter into it indicating which function to run. If you do not specify a function, then the script just exits. As an example the primary LaunchDaemon executes the script in this fashion: `bash /Library/Scripts/nice_updater main`. "Main" indicates the function that is being run.
+The nice_updater.sh script is not intended to be executed by simply running the script. It is intended to be executed by passing a parameter into it indicating which function to run. If you do not specify a function, then the script just exits. As an example the primary LaunchDaemon executes the script in this fashion: `/bin/bash /Library/Scripts/nice_updater main`. "Main" indicates the function that is being run.
 
 The primary LaunchDaemon is scheduled to be run every 24 hours (86400 seconds). What happens when it runs is determined by a few things:
 
@@ -54,7 +51,7 @@ You can also specify the number of days to delay the process after an update che
 
 ### Blocking Updates
 If you want to block updates from running during a certain period, you can write a "updates_blocked" key with a boolean value of "true" to the main preference file (/Library/Preferences/com.github.ryangball.nice_updater.plist).
-```
+```bash
 defaults write /Library/Preferences/com.github.ryangball.nice_updater.plist updates_blocked -bool true
 ```
 To reverse this setting simply set the key value to false or delete the key.

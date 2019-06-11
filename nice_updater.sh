@@ -1,46 +1,20 @@
 #!/bin/bash
 # shellcheck disable=SC2116,SC2002
 
-# The title of the message that is displayed when software updates are in progress and a user is logged in
-updateInProgressTitle="Software Update In Progress"
+# These variables will be automagically updated if you run build.sh, no need to modify them
+mainOnDemandDaemonPlist="/Library/LaunchDaemons/com.github.ryangball.nice_updater_on_demand.plist"
+watchPathsPlist="/Library/Preferences/com.github.ryangball.nice_updater.trigger.plist"
+preferenceFileFullPath="/Library/Preferences/com.github.ryangball.nice_updater.prefs.plist"
 
-# The message that is displayed when software updates are in progress and a user is logged in
-updateInProgressMessage="Apple Software Updates are being installed now. Please do not turn off this Mac, it will automatically reboot once the installation is complete.
-
-If you see this message for more than 30 minutes please call the Help Desk."
-
-# The message that a user will receive if they login to the Mac WHILE updates are being performed
-loginAfterUpdatesInProgressMessage="Unfortunately you logged in while Apple Software Updates were being installed. This Mac will restart in 60 seconds.
-
-If you have any questions please call the Help Desk."
-
-# The location of your log, keep in mind that if you nest the log into a folder that does not exist you'll need to mkdir -p the directory as well
-log="/Library/Logs/Nice_Updater.log"
-
-# The number of days to check for updates after a full update has been performed
-afterFullUpdateDelayDayCount="14"
-
-# The number of days to check for updates after a updates were checked, but no updates were available
-afterEmptyUpdateDelayDayCount="3"
-
-# The number of times to alert a single user prior to forcibly installing updates
-maxNotificationCount="10"
-
-# The full path of the yo.app binary
-# yo="/Applications/Utilities/yo.app/Contents/MacOS/yo"
-
-# The full path of the preference file which will store update information
-# If you modify this you need to modify the LaunchDaemon plists as well
-mainPreferencePlist="/Library/Preferences/com.github.ryangball.nice_updater.plist"
-
-# The name of the main LaunchDaemon plist
-# If you modify this you need to modify the LaunchDaemon plists as well
-mainLDPlist="com.github.ryangball.nice_updater_on_demand.plist"
-
-# Full path of the plist file which will be used as the watchpaths file
-# If you change this you need to modify the preinstall/postinstall scripts
-# and the com.github.ryangball.nice_updater_on_demand.plist contents
-watchPathsPlist="/Library/Preferences/com.github.ryangball.nice_updater_trigger.plist"
+###### Variables below this point are not intended to be modified #####
+updateInProgressTitle=$(defaults read "$preferenceFileFullPath" UpdateInProgressTitle)
+updateInProgressMessage=$(defaults read "$preferenceFileFullPath" UpdateInProgressMessage)
+loginAfterUpdatesInProgressMessage=$(defaults read "$preferenceFileFullPath" LoginAfterUpdatesInProgressMessage)
+log=$(defaults read "$preferenceFileFullPath" Log)
+afterFullUpdateDelayDayCount=$(defaults read "$preferenceFileFullPath" AfterFullUpdateDelayDayCount)
+afterEmptyUpdateDelayDayCount=$(defaults read "$preferenceFileFullPath" AfterEmptyUpdateDelayDayCount)
+maxNotificationCount=$(defaults read "$preferenceFileFullPath" MaxNotificationCount)
+yoPath=$(defaults read "$preferenceFileFullPath" YoPath)
 
 ###### Variables below this point are not intended to be modified #####
 scriptName=$(basename "$0")
@@ -62,22 +36,27 @@ function finish () {
 
 function record_last_full_update () {
     writelog "Done with update process; recording last full update time."
-    /usr/libexec/PlistBuddy -c "Delete :last_full_update_time" $mainPreferencePlist 2> /dev/null
-    /usr/libexec/PlistBuddy -c "Add :last_full_update_time string $(date +%Y-%m-%d\ %H:%M:%S)" $mainPreferencePlist
+    /usr/libexec/PlistBuddy -c "Delete :last_full_update_time" $preferenceFileFullPath 2> /dev/null
+    /usr/libexec/PlistBuddy -c "Add :last_full_update_time string $(date +%Y-%m-%d\ %H:%M:%S)" $preferenceFileFullPath
 
     writelog "Clearing user alert data."
-    /usr/libexec/PlistBuddy -c "Delete :users" $mainPreferencePlist
+    /usr/libexec/PlistBuddy -c "Delete :users" $preferenceFileFullPath
 
     writelog "Clearing On-Demand Update Key."
-    /usr/libexec/PlistBuddy -c "Delete :update_key" $mainPreferencePlist 2> /dev/null
-    /usr/libexec/PlistBuddy -c "Add :update_key string $updateKey" $mainPreferencePlist 2> /dev/null
+    /usr/libexec/PlistBuddy -c "Delete :update_key" $preferenceFileFullPath 2> /dev/null
+    /usr/libexec/PlistBuddy -c "Add :update_key array" $preferenceFileFullPath 2> /dev/null
 }
 
 function initiate_restart () {
-    writelog "Initiating restart now..."
+    writelog "Initiating $restartType now..."
     kill "$jamfHelperPID" > /dev/null 2>&1 && wait $! > /dev/null
-    /usr/local/bin/jamf reboot -background -immediately | while read -r LINE; do writelog "$LINE"; done
-    finish 0
+    if [[ "$restartType" = "restart" ]]; then
+        /usr/local/bin/jamf reboot -background -immediately | while read -r LINE; do writelog "$LINE"; done
+        finish 0
+    elif [[ "$restartType" = "shutdown" ]]; then
+        /sbin/halt | while read -r LINE; do writelog "$LINE"; done
+        finish 0
+    fi
 }
 
 function trigger_updates () {
@@ -85,9 +64,14 @@ function trigger_updates () {
     # 10.11 and above allows you to skip the update scan, so we can do that since we already scanned for updates initially
     [[ "$osMinorVersion" -ge 11 ]] && noScan='--no-scan'
     # shellcheck disable=SC2086
-    /usr/sbin/softwareupdate --install --restart $1 "$noScan" | \
-        grep --line-buffered -v -E 'Software Update Tool|Copyright|Finding|Downloaded|Done\.|You have installed one|Please restart immediately\.|^$' | \
-        while read -r LINE; do writelog "$LINE"; done
+    updateOutput=$(/usr/sbin/softwareupdate --install $1 "$noScan" | \
+        grep --line-buffered -v -E 'Software Update Tool|Copyright|Finding|Downloaded|Done\.|You have installed one|Please restart immediately\.|select Shut Down from the Apple menu|^$' | \
+        while read -r LINE; do writelog "$LINE"; done)
+    if [[ "$updateOutput" =~ "select Shut Down from the Apple menu" ]]; then
+        restartType="shutdown"
+    else
+        restartType="restart"
+    fi
     sleep 5
 }
 
@@ -106,18 +90,18 @@ function alert_user () {
     [[ "$notificationsLeft" == "0" ]] && local subtitle="No deferrals remaining! Click on \"Install Now\" to proceed"
 
     writelog "Stopping NiceUpdater On-Demand LaunchDaemon..."
-    launchctl unload -w "/Library/LaunchDaemons/$mainLDPlist"
+    launchctl unload -w "$mainOnDemandDaemonPlist"
 
     writelog "Generating NiceUpdater Update Key..."
     updateKey=$(cat /dev/urandom | env LC_CTYPE=C tr -dc a-zA-Z0-9 | head -c 16; echo)
-    /usr/libexec/PlistBuddy -c "Delete :update_key" $mainPreferencePlist 2> /dev/null
-    /usr/libexec/PlistBuddy -c "Add :update_key string $updateKey" $mainPreferencePlist 2> /dev/null
+    /usr/libexec/PlistBuddy -c "Add :update_key array" $preferenceFileFullPath 2> /dev/null
+    /usr/bin/plutil -insert update_key.0 -string "$updateKey" $preferenceFileFullPath
 
     writelog "Clearing NiceUpdater On-Demand Trigger file..."
-    /usr/libexec/PlistBuddy -c "Clear string" $watchPathsPlist
+    /usr/libexec/PlistBuddy -c "Delete :update_key" $watchPathsPlist 2> /dev/null
 
     writelog "Restarting NiceUpdater On-Demand LaunchDaemon..."
-    launchctl load -w "/Library/LaunchDaemons/$mainLDPlist"
+    launchctl load -w "$mainOnDemandDaemonPlist"
 
     writelog "Notifying $loggedInUser of available updates..."
     helperTitle="Software Updates Required"
@@ -133,14 +117,14 @@ function alert_user () {
         defaults write $watchPathsPlist update_key $updateKey
     fi
 
-    /usr/libexec/PlistBuddy -c "Add :users dict" $mainPreferencePlist 2> /dev/null
-    /usr/libexec/PlistBuddy -c "Delete :users:$loggedInUser" $mainPreferencePlist 2> /dev/null
-    /usr/libexec/PlistBuddy -c "Add :users:$loggedInUser dict" $mainPreferencePlist
-    /usr/libexec/PlistBuddy -c "Add :users:$loggedInUser:alert_count integer $2" $mainPreferencePlist
+    /usr/libexec/PlistBuddy -c "Add :users dict" $preferenceFileFullPath 2> /dev/null
+    /usr/libexec/PlistBuddy -c "Delete :users:$loggedInUser" $preferenceFileFullPath 2> /dev/null
+    /usr/libexec/PlistBuddy -c "Add :users:$loggedInUser dict" $preferenceFileFullPath
+    /usr/libexec/PlistBuddy -c "Add :users:$loggedInUser:alert_count integer $2" $preferenceFileFullPath
 }
 
 function alert_logic () {
-    notificationCount=$(/usr/libexec/PlistBuddy -c "Print :users:$loggedInUser:alert_count" $mainPreferencePlist 2> /dev/null | xargs)
+    notificationCount=$(/usr/libexec/PlistBuddy -c "Print :users:$loggedInUser:alert_count" $preferenceFileFullPath 2> /dev/null | xargs)
     if [[ "$notificationCount" -ge "$maxNotificationCount" ]]; then
         writelog "$loggedInUser has been notified $notificationCount times; not waiting any longer."
         "$JAMFHELPER" -windowType utility -lockHUD -title "$updateInProgressTitle" -alignHeading center -alignDescription natural -description "$updateInProgressMessage" -icon "$icon" -iconSize 100 &
@@ -207,8 +191,8 @@ function update_check () {
         fi
     else
         writelog "No updates at this time; exiting."
-        /usr/libexec/PlistBuddy -c "Delete :last_empty_update_time" $mainPreferencePlist 2> /dev/null
-        /usr/libexec/PlistBuddy -c "Add :last_empty_update_time string $(date +%Y-%m-%d\ %H:%M:%S)" $mainPreferencePlist
+        /usr/libexec/PlistBuddy -c "Delete :last_empty_update_time" $preferenceFileFullPath 2> /dev/null
+        /usr/libexec/PlistBuddy -c "Add :last_empty_update_time string $(date +%Y-%m-%d\ %H:%M:%S)" $preferenceFileFullPath
         finish 0
     fi
 }
@@ -222,19 +206,19 @@ on_demand () {
     writelog " "
     writelog "======== Starting $scriptName ========"
     writelog "Verifying On-Demand Update Key..."
-    updateKey=$(defaults read $mainPreferencePlist update_key)
+    storedUpdateKeys=$(/usr/libexec/PlistBuddy -c "Print update_key" $preferenceFileFullPath | sed -e 1d -e '$d' | sed 's/^ *//')
     testUpdateKey=$(defaults read $watchPathsPlist update_key)
-    if [[ ! "$updateKey" == "$testUpdateKey" ]]; then
-        writelog "On-Demand Update Keys don't match; exiting."
-        finish 0
-    else
-        writelog "On-Demand Update Keys match; continuing."
+if [[ -n "$testUpdateKey" ]] && [[ "$storedUpdateKeys" == *"$testUpdateKey"* ]]; then
+    writelog "On-Demand Update Key confirmed; continuing."
         "$JAMFHELPER" -windowType utility -lockHUD -title "$updateInProgressTitle" -alignHeading center -alignDescription natural -description "$updateInProgressMessage" -icon "$icon" -iconSize 100 &
         jamfHelperPID=$(echo $!)
         writelog "Installing updates that DO require a restart..."
         trigger_updates "--recommended --restart"
         record_last_full_update
         initiate_restart
+    else
+        writelog "On-Demand Update Key not confirmed; exiting."
+        finish 0
     fi
 }
 
@@ -245,7 +229,7 @@ function main () {
     writelog "======== Starting $scriptName ========"
 
     # See if we are blocking updates, if so exit
-    updatesBlocked=$(/usr/libexec/PlistBuddy -c "Print :updates_blocked" $mainPreferencePlist 2> /dev/null | xargs 2> /dev/null)
+    updatesBlocked=$(/usr/libexec/PlistBuddy -c "Print :updates_blocked" $preferenceFileFullPath 2> /dev/null | xargs 2> /dev/null)
     if [[ "$updatesBlocked" == "true" ]]; then
         writelog "Updates are blocked for this client at this time; exiting."
         finish 0
@@ -257,8 +241,8 @@ function main () {
         writelog "At least one recommended update was marked available from a previous check."
         update_check
     else
-        lastFullUpdateTime=$(/usr/libexec/PlistBuddy -c "Print :last_full_update_time" $mainPreferencePlist 2> /dev/null | xargs 2> /dev/null)
-        lastEmptyUpdateTime=$(/usr/libexec/PlistBuddy -c "Print :last_empty_update_time" $mainPreferencePlist 2> /dev/null | xargs 2> /dev/null)
+        lastFullUpdateTime=$(/usr/libexec/PlistBuddy -c "Print :last_full_update_time" $preferenceFileFullPath 2> /dev/null | xargs 2> /dev/null)
+        lastEmptyUpdateTime=$(/usr/libexec/PlistBuddy -c "Print :last_empty_update_time" $preferenceFileFullPath 2> /dev/null | xargs 2> /dev/null)
         if [[ -n "$lastFullUpdateTime" ]]; then
             daysSinceLastFullUpdate="$(compare_date "$lastFullUpdateTime")"
             if [[ "$daysSinceLastFullUpdate" -ge "$afterFullUpdateDelayDayCount" ]]; then
