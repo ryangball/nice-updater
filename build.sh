@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # The main identifier which everything hinges on
-identifier="com.github.ryangball.nice_updater"
+identifier="com.github.grahampugh.nice_updater"
 
 # Default version of the build, you can leave this alone and specify as an argument like so: ./build.sh 1.7
 version="1.0"
@@ -29,13 +29,10 @@ afterFullUpdateDelayDayCount="14"
 afterEmptyUpdateDelayDayCount="3"
 
 # The number of times to alert a single user prior to forcibly installing updates
-maxNotificationCount="3"
+maxNotificationCount="10"
 
 # The start interval of the main plist, essentially the time in seconds between alerts, 7200 is two hours
-startInterval="7200"
-
-# The full path of the yo.app binary
-yoPath="/Applications/Utilities/yo.app/Contents/MacOS/yo"
+startInterval="86400"
 
 ###### Variables below this point are not intended to be modified #####
 mainDaemonPlist="/Library/LaunchDaemons/${identifier}.plist"
