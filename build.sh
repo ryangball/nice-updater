@@ -62,7 +62,6 @@ sed -i '' "s#watchPathsPlist=.*#watchPathsPlist=\"$watchPathsPlist\"#" "$PWD/pre
 sed -i '' "s#watchPathsPlist=.*#watchPathsPlist=\"$watchPathsPlist\"#" "$PWD/nice_updater.sh"
 sed -i '' "s#preferenceFileFullPath=.*#preferenceFileFullPath=\"$preferenceFileFullPath\"#" "$PWD/postinstall.sh"
 sed -i '' "s#preferenceFileFullPath=.*#preferenceFileFullPath=\"$preferenceFileFullPath\"#" "$PWD/nice_updater.sh"
-sed -i '' "s#yoPath=.*#yoPath=\"$yoPath\"#" "$PWD/preinstall.sh"
 
 # Create clean temp build directories
 find /private/tmp/nice_updater -mindepth 1 -delete &> /dev/null
@@ -100,7 +99,6 @@ defaults write "$PWD/$preferenceFileName" Log -string "$log"
 defaults write "$PWD/$preferenceFileName" AfterFullUpdateDelayDayCount -int "$afterFullUpdateDelayDayCount"
 defaults write "$PWD/$preferenceFileName" AfterEmptyUpdateDelayDayCount -int "$afterEmptyUpdateDelayDayCount"
 defaults write "$PWD/$preferenceFileName" MaxNotificationCount -int "$maxNotificationCount"
-defaults write "$PWD/$preferenceFileName" YoPath -string "$yoPath"
 
 # Migrate preinstall and postinstall scripts to temp build directory
 cp "$PWD/preinstall.sh" /private/tmp/nice_updater/scripts/preinstall

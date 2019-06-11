@@ -3,16 +3,14 @@
 <plist version="1.0">
 <dict>
 	<key>Label</key>
-	<string>com.github.ryangball.nice_updater_on_demand</string>
+	<string>com.github.grahampugh.nice_updater</string>
 	<key>ProgramArguments</key>
 	<array>
 		<string>/bin/bash</string>
 		<string>/Library/Scripts/nice_updater.sh</string>
-		<string>on_demand</string>
+		<string>main</string>
 	</array>
-	<key>WatchPaths</key>
-	<array>
-		<string>/Library/Preferences/com.github.ryangball.nice_updater.trigger.plist</string>
-	</array>
+	<key>StartInterval</key>
+	<integer>86400</integer>
 </dict>
 </plist>

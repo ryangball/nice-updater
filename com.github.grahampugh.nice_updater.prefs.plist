@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>AfterEmptyUpdateDelayDayCount</key>
+	<integer>3</integer>
+	<key>AfterFullUpdateDelayDayCount</key>
+	<integer>14</integer>
+	<key>Log</key>
+	<string>/Library/Logs/Nice_Updater.log</string>
+	<key>LoginAfterUpdatesInProgressMessage</key>
+	<string>Unfortunately you logged in while Apple Software Updates were being installed. This Mac will restart in 60 seconds.
+
+If you have any questions please call the Help Desk.</string>
+	<key>MaxNotificationCount</key>
+	<integer>10</integer>
+	<key>UpdateInProgressMessage</key>
+	<string>Apple Software Updates are being installed now. Please do not turn off this Mac, it will automatically reboot once the installation is complete.
+
+If you see this message for more than 30 minutes please call the Help Desk.</string>
+	<key>UpdateInProgressTitle</key>
+	<string>Software Update In Progress</string>
+</dict>
+</plist>
