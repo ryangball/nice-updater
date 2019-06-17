@@ -6,13 +6,13 @@
 	<string>com.github.ryangball.nice_updater_on_demand</string>
 	<key>ProgramArguments</key>
 	<array>
-        <string>bash</string>
-        <string>/Library/Scripts/nice_updater.sh</string>
-        <string>on_demand</string>
+		<string>/bin/bash</string>
+		<string>/Library/Scripts/nice_updater.sh</string>
+		<string>on_demand</string>
 	</array>
-    <key>WatchPaths</key>
-    <array>
-        <string>/Library/Preferences/com.github.ryangball.nice_updater_trigger.plist</string>
-    </array>
+	<key>WatchPaths</key>
+	<array>
+		<string>/Library/Preferences/com.github.ryangball.nice_updater.trigger.plist</string>
+	</array>
 </dict>
 </plist>
