@@ -46,7 +46,7 @@ Whether you choose to [build](https://github.com/ryangball/nice-updater#build-th
 | AfterEmptyUpdateDelayDayCount | int | Number of days to delay the process after an update check occurs where no updates were found (default is 3). This delay will ensure that we are not checking for updates all day long if there are no updates found in the morning. This is also a good way to stagger updates out over your entire fleet. |
 | MaxNotificationCount | int | Max number of alerts for a single user before restart-required updates are force-installed. |
 | YoPath | string | Full path of yo.app. |
-| updatesBlocked | bool | Set to true to block updates. |
+| UpdatesBlocked | bool | Set to true to block updates. |
 
 ### Modify Preference File Examples
 ```bash
@@ -60,10 +60,10 @@ identifier="com.github.ryangball.nice_updater"
 defaults write "/Library/Preferences/$identifier.prefs.plist" MaxNotificationCount -int 4
 
 # Block updates during a certain period
-defaults write "/Library/Preferences/$identifier.prefs.plist" updatesBlocked -bool true
+defaults write "/Library/Preferences/$identifier.prefs.plist" UpdatesBlocked -bool true
 
 # Unblock updates
-defaults delete "/Library/Preferences/$identifier.prefs.plist" updatesBlocked
+defaults delete "/Library/Preferences/$identifier.prefs.plist" UpdatesBlocked
 
 # Change the number of days to delay the process after an update check occurs where
 # no updates were found (default is 3)
