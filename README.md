@@ -34,7 +34,7 @@ I've designed this to be very customizable. Most things you'd want to customize 
 
 This methodology also allows you to change the identifier from com.github.ryangball.nice_updater to whatever you want, and all other files will get updated with the new identifier at build time.
 
-Whether you choose to [build](https://github.com/ryangball/nice-updater#build-the-project-into-a-pkg) it yourself, or use the latest [release](https://github.com/ryangball/nice-updater/releases/latest) (after 1.0.3), you can customize nice-updater by modifying the values of the following keys in the main preference file:
+Whether you choose to [build](https://github.com/ryangball/nice-updater#build-the-project-into-a-pkg) it yourself, or use the latest [release](https://github.com/ryangball/nice-updater/releases/latest) (after 1.0.3), you can customize nice-updater even after installation of the .pkg by modifying the values of the following keys in the main preference file:
 
 | Key | Type | Description |
 | --- | --- | --- |
@@ -69,8 +69,6 @@ defaults delete "/Library/Preferences/$identifier.prefs.plist" updatesBlocked
 # no updates were found (default is 3)
 defaults write "/Library/Preferences/$identifier.prefs.plist" AfterEmptyUpdateDelayDayCount -int 4
 ```
-
-Almost all of these variables get written to com.github.ryangball.nice_updater.prefs.plist, which is included in the .pkg and read at execution of the LaunchDaemon on the client. This allows you to also change these variables by modifying the above mentioned preference file.
 
 ## Workflow and Options
 The nice_updater.sh script is not intended to be executed by simply running the script. It is intended to be executed by passing a parameter into it indicating which function to run. If you do not specify a function, then the script just exits. As an example the primary LaunchDaemon executes the script in this fashion: `/bin/bash /Library/Scripts/nice_updater main`. "Main" indicates the function that is being run.
