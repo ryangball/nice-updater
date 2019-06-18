@@ -28,7 +28,6 @@ Tail the log to see the current state:
 ```bash
 tail -f /Library/Logs/Nice_Updater.log
 ```
-You can do this several times to see the entire alerting/force-update workflow.
 
 ## Customizing
 I've designed this to be pretty easy to customize. Most things you'd probably want to customize would be in [this section of the build.sh script](https://github.com/ryangball/nice-updater/blob/0364aa450901e9d6257d147c4dc0ed1a181765c9/build.sh#L3-L38). After you customize these variables, you can build again, and things will get updated as necessary. Almost all of these variables get written to com.github.ryangball.nice_updater.prefs.plist, which is included in the .pkg and read at execution of the LaunchDaemon on the client. This allows you to also change these variables by modifying the above mentioned preference file.
