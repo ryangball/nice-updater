@@ -30,35 +30,52 @@ tail -f /Library/Logs/Nice_Updater.log
 ```
 
 ## Customizing
-I've designed this to be pretty easy to customize. Most things you'd probably want to customize would be in [this section of the build.sh script](https://github.com/ryangball/nice-updater/blob/0364aa450901e9d6257d147c4dc0ed1a181765c9/build.sh#L3-L38). After you customize these variables, you can build again, and things will get updated as necessary. Almost all of these variables get written to com.github.ryangball.nice_updater.prefs.plist, which is included in the .pkg and read at execution of the LaunchDaemon on the client. This allows you to also change these variables by modifying the above mentioned preference file.
+I've designed this to be very customizable. Most things you'd want to customize would be in [this section of the build.sh script](https://github.com/ryangball/nice-updater/blob/0364aa450901e9d6257d147c4dc0ed1a181765c9/build.sh#L3-L38). After you customize these variables, you can [build](https://github.com/ryangball/nice-updater#build-the-project-into-a-pkg) again and files will auto-magically get updated as necessary.
 
 This methodology also allows you to change the identifier from com.github.ryangball.nice_updater to whatever you want, and all other files will get updated with the new identifier at build time.
 
-Whether you choose to build it yourself, or use a [release](https://github.com/ryangball/nice-updater/releases/latest) (after 1.0.3), you can modify the variables like so:
+Whether you choose to [build](https://github.com/ryangball/nice-updater#build-the-project-into-a-pkg) it yourself, or use the latest [release](https://github.com/ryangball/nice-updater/releases/latest) (after 1.0.3), you can customize nice-updater by modifying the values of the following keys in the main preference file:
+
+| Key | Type | Description |
+| --- | --- | --- |
+| UpdateInProgressTitle | string | Title of UpdateInProgressMessage dialog. |
+| UpdateInProgressMessage | string | Message to display to the logged in user when restart-required updates are being installed. |
+| LoginAfterUpdatesInProgressMessage | string | Message to display to to a user who logged in **while** restart-required updates were being installed. |
+| Log | string | Full path of the log file. |
+| AfterFullUpdateDelayDayCount | int | After a full update has been performed (all updates available are installed), updates will not be checked again until N days have passed (default is 14 days). |
+| AfterEmptyUpdateDelayDayCount | int | Number of days to delay the process after an update check occurs where no updates were found (default is 3). This delay will ensure that we are not checking for updates all day long if there are no updates found in the morning. This is also a good way to stagger updates out over your entire fleet. |
+| MaxNotificationCount | int | Max number of alerts for a single user before restart-required updates are force-installed. |
+| YoPath | string | Full path of yo.app. |
+| updatesBlocked | bool | Set to true to block updates. |
+
+### Modify Preference File Examples
 ```bash
-# Change the number of times to alert a single user prior to forcibly installing updates
-# Change it to 4 days
+#!/bin/bash
+# The main identifier of nice-updater (default is shown below, if you've changed this
+# you'll need to adjust as necessary)
 identifier="com.github.ryangball.nice_updater"
+
+# Change the number of times to alert a single user prior to forcibly installing updates
+# to 4 days (default is 3)
 defaults write "/Library/Preferences/$identifier.prefs.plist" MaxNotificationCount -int 4
+
+# Block updates during a certain period
+defaults write "/Library/Preferences/$identifier.prefs.plist" updatesBlocked -bool true
+
+# Unblock updates
+defaults delete "/Library/Preferences/$identifier.prefs.plist" updatesBlocked
+
+# Change the number of days to delay the process after an update check occurs where
+# no updates were found (default is 3)
+defaults write "/Library/Preferences/$identifier.prefs.plist" AfterEmptyUpdateDelayDayCount -int 4
 ```
 
-List of variables you can modify in the preference file:
-
-| Key | Type |
-| --- | --- |
-| UpdateInProgressTitle | string |
-| UpdateInProgressMessage | string |
-| LoginAfterUpdatesInProgressMessage | string |
-| Log | string |
-| AfterFullUpdateDelayDayCount | int |
-| AfterEmptyUpdateDelayDayCount | int |
-| MaxNotificationCount | int |
-| YoPath | string |
+Almost all of these variables get written to com.github.ryangball.nice_updater.prefs.plist, which is included in the .pkg and read at execution of the LaunchDaemon on the client. This allows you to also change these variables by modifying the above mentioned preference file.
 
 ## Workflow and Options
 The nice_updater.sh script is not intended to be executed by simply running the script. It is intended to be executed by passing a parameter into it indicating which function to run. If you do not specify a function, then the script just exits. As an example the primary LaunchDaemon executes the script in this fashion: `/bin/bash /Library/Scripts/nice_updater main`. "Main" indicates the function that is being run.
 
-The primary LaunchDaemon is scheduled to be run every two hours (7200 seconds). What happens when it runs is determined by a few things:
+The primary LaunchDaemon is scheduled to be run every two hours by default (7200 seconds). What happens when it runs is determined by a few things:
 ### When a User is Not Logged In
 - Updates are downloaded, applied immediately, and the Mac is restarted (if required).
 - If a restart *is* required and a user logs into the Mac while updates are being applied, the user is notified that updates are being applied and the Mac will be restarted.
@@ -68,19 +85,6 @@ The primary LaunchDaemon is scheduled to be run every two hours (7200 seconds). 
 - If a restart *is* required the user will be alerted via yo.app. The user can choose to cancel the alert, or install the restart-required updates now and the Mac will restart afterward.
 - The default number of alerts before a forced install of the restart-required updates is 3, this can be changed for your environment. When using this default value a single user gets alerted 3 times (once every two hours) and has the option to install at any of those points, if they do not, two hours after the last alert the update will be applied and the Mac will restart. The user is will also receive a jamfHelper dialog when the updates are being applied letting them know their machine will restart soon.
 - The alert logic tracks which users are alerted, so it will only forcibly install those restart-required updates if the same user is alerted 3 times (when using the default value) **or** of course if a user is not logged in.
-
-### Delay Running After Full Update
-By default, after a full update has been performed (all updates available are installed), updates will not be checked again until 14 days have passed. You can specify the number of days to delay if you'd like to change this value.
-
-### Delay Running After No Updates Available
-You can also specify the number of days to delay the process after an update check occurs where no updates were found (default is 3). This delay will ensure that we are not checking for updates all day long if there are no updates found in the morning. This is also a good way to stagger updates out over your entire fleet.
-
-### Blocking Updates
-If you want to block updates from running during a certain period, you can write a "updates_blocked" key with a boolean value of "true" to the main preference file (/Library/Preferences/com.github.ryangball.nice_updater.plist).
-```bash
-defaults write /Library/Preferences/com.github.ryangball.nice_updater.plist updates_blocked -bool true
-```
-To reverse this setting simply set the key value to false or delete the key.
 
 ## Alert Logic
 A user is only alerted when updates are pending that require a restart. If a user is being alerted, they will receive a **persistent** Notification Center alert, which they can dismiss. By default a single user can be alerted 3 times before they will receive a jamfHelper message indicating that updates are in progress and the Mac will restart soon. The built-in alert logic tracks which users receive the alerts. In multi-user environments, this is very important because if you simply alert whichever user is logged in at that moment then count those alerts up, you might have a situation where a specific user is only alerted once or not at all before restart-required updates are force-installed.
@@ -115,3 +119,5 @@ The second LaunchDaemon (com.github.ryangball.nice_updater_on_demand) runs the o
 
 ## Special Thanks
 [kurtroberts](https://github.com/kurtroberts) - For [install_latest_yo.sh](https://github.com/ryangball/nice-updater/blob/master/install_latest_yo.sh)
+
+[grahampugh](https://github.com/grahampugh) - For making me realize I should just start the LaunchDaemon after installation for consistency

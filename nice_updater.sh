@@ -221,7 +221,7 @@ function main () {
     writelog "======== Starting $scriptName ========"
 
     # See if we are blocking updates, if so exit
-    updatesBlocked=$(/usr/libexec/PlistBuddy -c "Print :updates_blocked" $preferenceFileFullPath 2> /dev/null | xargs 2> /dev/null)
+    updatesBlocked=$(/usr/libexec/PlistBuddy -c "Print :updatesBlocked" $preferenceFileFullPath 2> /dev/null | xargs 2> /dev/null)
     if [[ "$updatesBlocked" == "true" ]]; then
         writelog "Updates are blocked for this client at this time; exiting."
         finish 0
