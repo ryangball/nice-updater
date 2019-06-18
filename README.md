@@ -5,7 +5,7 @@ A tool to update macOS that (nicely) gives the user several chances to install u
 ### yo.app
 - [yo.app](https://github.com/sheagcraig/yo) is required to display the Notification Center alerts. The alerts that yo.app create are persistent, and you can specify custom buttons which apply an action. This is used to allow the user to either cancel the alert, or install updates from there easily. *See [Jamf Pro Requirements](https://github.com/ryangball/nice-updater#jamf-pro-requirements) for related information.
 - To avoid packaging yo.app for use in your Jamf Pro environment, you can configure a Jamf Pro policy with "Execution Frequency" set to "Ongoing", triggered by a custom event called "yo" which runs [install_latest_yo.sh](https://github.com/ryangball/nice-updater/blob/master/install_latest_yo.sh) as a payload.
-- Alternatively you can download a release .pkg of yo.app [here](https://github.com/sheagcraig/yo/releases). There is also info on how to customize the yo.app default icon [here](https://github.com/sheagcraig/yo#icons).
+- Alternatively you can download the latest release .pkg of yo.app [here](https://github.com/sheagcraig/yo/releases/latest). There is also info on how to customize the yo.app default icon [here](https://github.com/sheagcraig/yo#icons).
 
 ### Jamf Pro Requirements
 *Note: There are no Jamf Pro policies required in order for this tool to function (if yo.app is installed). However, I use Jamf Pro to manage Macs. Consequently, I've created this minimally leveraging Jamf Pro. You could easily adapt this for use in other environments.*
@@ -22,15 +22,38 @@ cd nice-updater
 ```
 
 ## Testing
-If you [build](https://github.com/ryangball/nice-updater#build-the-project-into-a-pkg) the .pkg or download one of the [releases](https://github.com/ryangball/nice-updater/releases), after installation you can start the LaunchDaemon to begin:
-```bash
-sudo launchctl start com.github.ryangball.nice_updater
-```
+As of release 1.0.3, if you [build](https://github.com/ryangball/nice-updater#build-the-project-into-a-pkg) the .pkg or download the latest [release](https://github.com/ryangball/nice-updater/releases/latest), after installation the main LaunchDaemon will automatically start.
+
 Tail the log to see the current state:
 ```bash
 tail -f /Library/Logs/Nice_Updater.log
 ```
 You can do this several times to see the entire alerting/force-update workflow.
+
+## Customizing
+I've designed this to be pretty easy to customize. Most things you'd probably want to customize would be in [this section of the build.sh script](https://github.com/ryangball/nice-updater/blob/0364aa450901e9d6257d147c4dc0ed1a181765c9/build.sh#L3-L38). After you customize these variables, you can build again, and things will get updated as necessary. Almost all of these variables get written to com.github.ryangball.nice_updater.prefs.plist, which is included in the .pkg and read at execution of the LaunchDaemon on the client. This allows you to also change these variables by modifying the above mentioned preference file.
+
+This methodology also allows you to change the identifier from com.github.ryangball.nice_updater to whatever you want, and all other files will get updated with the new identifier at build time.
+
+Whether you choose to build it yourself, or use a [release](https://github.com/ryangball/nice-updater/releases/latest) (after 1.0.3), you can modify the variables like so:
+```bash
+# Change the number of times to alert a single user prior to forcibly installing updates
+# Change it to 4 days
+identifier="com.github.ryangball.nice_updater"
+defaults write "/Library/Preferences/$identifier.prefs.plist" MaxNotificationCount -int 4
+```
+
+List of variables you can modify in the preference file:
+| Key                                | Type   |
+| ---------------------------------- | ------ |
+| UpdateInProgressTitle              | string |
+| UpdateInProgressMessage            | string |
+| LoginAfterUpdatesInProgressMessage | string |
+| Log                                | string |
+| AfterFullUpdateDelayDayCount       | int    |
+| AfterEmptyUpdateDelayDayCount      | int    |
+| MaxNotificationCount               | int    |
+| YoPath                             | string |
 
 ## Workflow and Options
 The nice_updater.sh script is not intended to be executed by simply running the script. It is intended to be executed by passing a parameter into it indicating which function to run. If you do not specify a function, then the script just exits. As an example the primary LaunchDaemon executes the script in this fashion: `/bin/bash /Library/Scripts/nice_updater main`. "Main" indicates the function that is being run.
@@ -58,6 +81,7 @@ If you want to block updates from running during a certain period, you can write
 defaults write /Library/Preferences/com.github.ryangball.nice_updater.plist updates_blocked -bool true
 ```
 To reverse this setting simply set the key value to false or delete the key.
+
 ## Alert Logic
 A user is only alerted when updates are pending that require a restart. If a user is being alerted, they will receive a **persistent** Notification Center alert, which they can dismiss. By default a single user can be alerted 3 times before they will receive a jamfHelper message indicating that updates are in progress and the Mac will restart soon. The built-in alert logic tracks which users receive the alerts. In multi-user environments, this is very important because if you simply alert whichever user is logged in at that moment then count those alerts up, you might have a situation where a specific user is only alerted once or not at all before restart-required updates are force-installed.
 

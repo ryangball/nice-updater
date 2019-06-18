@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Written by Ryan Ball
+# Obtained from https://github.com/ryangball/nice-updater
+
 # The main identifier which everything hinges on
 identifier="com.github.ryangball.nice_updater"
 
@@ -66,6 +69,7 @@ sed -i '' "s#watchPathsPlist=.*#watchPathsPlist=\"$watchPathsPlist\"#" "$PWD/nic
 sed -i '' "s#preferenceFileFullPath=.*#preferenceFileFullPath=\"$preferenceFileFullPath\"#" "$PWD/postinstall.sh"
 sed -i '' "s#preferenceFileFullPath=.*#preferenceFileFullPath=\"$preferenceFileFullPath\"#" "$PWD/nice_updater.sh"
 sed -i '' "s#yoPath=.*#yoPath=\"$yoPath\"#" "$PWD/preinstall.sh"
+sed -i '' "s#identifier=.*#identifier=\"$identifier\"#" "$PWD/postinstall.sh"
 
 # Create clean temp build directories
 find /private/tmp/nice_updater -mindepth 1 -delete &> /dev/null
@@ -74,6 +78,9 @@ mkdir -p /private/tmp/nice_updater/files/Library/Preferences
 mkdir -p /private/tmp/nice_updater/files/Library/Scripts/
 mkdir -p /private/tmp/nice_updater/scripts
 mkdir -p "$PWD/build"
+
+# Remove plists that will not be in build (if identifier was changed)
+find "$PWD" -name "*.plist" -maxdepth 1 -mindepth 1 -not -name "$identifier*" -delete &> /dev/null
 
 # Create/modify the main Daemon plist
 [[ -e "$PWD/$mainDaemonFileName" ]] && /usr/libexec/PlistBuddy -c Clear "$PWD/$mainDaemonFileName" &> /dev/null

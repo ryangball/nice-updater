@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Written by Ryan Ball
+# Obtained from https://github.com/ryangball/nice-updater
+
 # These variables will be automagically updated if you run build.sh, no need to modify them
 mainDaemonPlist="/Library/LaunchDaemons/com.github.ryangball.nice_updater.plist"
 mainOnDemandDaemonPlist="/Library/LaunchDaemons/com.github.ryangball.nice_updater_on_demand.plist"

@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Contributed by Kurt Roberts https://github.com/kurtroberts
+# Obtained from https://github.com/ryangball/nice-updater
+
 # Use this script to avoid having to package yo in your Jamf Pro
 # To configure, create a policy available on an ongoing basis,
 # triggered by a custom event called "yo" that runs this script as a payload.
