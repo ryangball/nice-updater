@@ -19,6 +19,7 @@ maxNotificationCount=$(defaults read "$preferenceFileFullPath" MaxNotificationCo
 scriptName=$(basename "$0")
 osVersion=$(sw_vers -productVersion)
 osMinorVersion=$(echo "$osVersion" | awk -F. '{print $2}')
+osReleaseVersion=$(echo "$osVersion" | awk -F. '{print $3}')
 [[ "$osMinorVersion" -le 12 ]] && icon="/System/Library/CoreServices/Software Update.app/Contents/Resources/SoftwareUpdate.icns"
 [[ "$osMinorVersion" -ge 13 ]] && icon="/System/Library/CoreServices/Install Command Line Developer Tools.app/Contents/Resources/SoftwareUpdate.icns"
 JAMFHELPER="/Library/Application Support/JAMF/bin/jamfHelper.app/Contents/MacOS/jamfHelper"
@@ -129,7 +130,10 @@ function alert_logic () {
         "$JAMFHELPER" -windowType utility -lockHUD -title "$updateInProgressTitle" -alignHeading center -alignDescription natural -description "$updateInProgressMessage" -icon "$icon" -iconSize 100 &
         jamfHelperPID=$(echo $!)
         writelog "Installing updates that DO require a restart..."
-        trigger_updates "--recommended --restart"
+        triggerOptions="--recommended"
+        [[ "$osMinorVersion" -ge 14 || ("$osMinorVersion" -eq 13 && "$osReleaseVersion" -ge 4) ]] && triggerOptions+=" --restart"
+        trigger_updates "$triggerOptions"
+
         record_last_full_update
         initiate_restart
     else
