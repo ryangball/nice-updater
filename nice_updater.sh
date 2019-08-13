@@ -6,6 +6,8 @@ watchPathsPlist="/Library/Preferences/com.github.grahampugh.nice_updater.trigger
 preferenceFileFullPath="/Library/Preferences/com.github.grahampugh.nice_updater.prefs.plist"
 
 ###### Variables below this point are not intended to be modified #####
+helperTitle=$(defaults read "$preferenceFileFullPath" UpdateRequiredTitle)
+helperDesc=$(defaults read "$preferenceFileFullPath" UpdateRequiredMessage)
 updateInProgressTitle=$(defaults read "$preferenceFileFullPath" UpdateInProgressTitle)
 updateInProgressMessage=$(defaults read "$preferenceFileFullPath" UpdateInProgressMessage)
 loginAfterUpdatesInProgressMessage=$(defaults read "$preferenceFileFullPath" LoginAfterUpdatesInProgressMessage)
@@ -19,9 +21,18 @@ scriptName=$(basename "$0")
 osVersion=$(sw_vers -productVersion)
 osMinorVersion=$(echo "$osVersion" | awk -F. '{print $2}')
 osReleaseVersion=$(echo "$osVersion" | awk -F. '{print $3}')
-[[ "$osMinorVersion" -le 12 ]] && icon="/System/Library/CoreServices/Software Update.app/Contents/Resources/SoftwareUpdate.icns"
-[[ "$osMinorVersion" -ge 13 ]] && icon="/System/Library/CoreServices/Install Command Line Developer Tools.app/Contents/Resources/SoftwareUpdate.icns"
+iconCustomPath=$(defaults read "$preferenceFileFullPath" IconCustomPath)
 JAMFHELPER="/Library/Application Support/JAMF/bin/jamfHelper.app/Contents/MacOS/jamfHelper"
+
+# set default icon if not included in build
+if [[ -z $iconCustomPath ]]; then
+    icon="$iconCustomPath"
+elif [[ "$osMinorVersion" -le 12 ]]; then
+    icon="/System/Library/CoreServices/Software Update.app/Contents/Resources/SoftwareUpdate.icns"fi
+elif [[ "$osMinorVersion" -ge 13 ]]; then
+    icon="/System/Library/CoreServices/Install Command Line Developer Tools.app/Contents/Resources/SoftwareUpdate.icns"
+fi
+
 function writelog () {
     DATE=$(date +%Y-%m-%d\ %H:%M:%S)
     /bin/echo "${1}"
@@ -103,8 +114,6 @@ function alert_user () {
     launchctl load -w "$mainOnDemandDaemonPlist"
 
     writelog "Notifying $loggedInUser of available updates..."
-    helperTitle="Software Updates Required"
-    helperDesc="Updates are required to be installed on this Mac which require a restart. The Mac will restart after installation."
     if [[ "$notificationsLeft" == "0" ]]; then
         helperExitCode=$( "$JAMFHELPER" -windowType utility -lockHUD -title "$helperTitle" -heading "$subtitle" -description "$helperDesc" -button1 "Install Now" -defaultButton 1 -timeout 82800 -icon "$icon" -iconSize 100 )
     else
@@ -166,7 +175,7 @@ function update_check () {
             writelog "A restart is required for remaining updates."
 
             # If no user is logged in, just update and restart. Check the user now as some time has past since the script began.
-            loggedInUser=$(/usr/bin/python -c 'from SystemConfiguration import SCDynamicStoreCopyConsoleUser; import sys; username = (SCDynamicStoreCopyConsoleUser(None, None, None) or [None])[0]; username = [username,""][username in [u"loginwindow", None, u""]]; sys.stdout.write(username + "\n");')
+            loggedInUser=$(/usr/sbin/scutil <<< "show State:/Users/ConsoleUser" | /usr/bin/awk -F': ' '/[[:space:]]+Name[[:space:]]:/ { if ( $2 != "loginwindow" ) { print $2 }}')
             loggedInUID=$(id -u "$loggedInUser")
             if [[ "$loggedInUser" == "root" ]] || [[ -z "$loggedInUser" ]]; then
                 writelog "No user logged in."
@@ -174,7 +183,7 @@ function update_check () {
                 trigger_updates "--recommended --restart"
                 record_last_full_update
                 # Some time has passed since we started to install the updates, check for a logged in user once more
-                loggedInUser=$(/usr/bin/python -c 'from SystemConfiguration import SCDynamicStoreCopyConsoleUser; import sys; username = (SCDynamicStoreCopyConsoleUser(None, None, None) or [None])[0]; username = [username,""][username in [u"loginwindow", None, u""]]; sys.stdout.write(username + "\n");')
+                loggedInUser=$(/usr/sbin/scutil <<< "show State:/Users/ConsoleUser" | /usr/bin/awk -F': ' '/[[:space:]]+Name[[:space:]]:/ { if ( $2 != "loginwindow" ) { print $2 }}')
                 if [[ ! "$loggedInUser" == "root" ]] && [[ -n "$loggedInUser" ]]; then
                     writelog "$loggedInUser has logged in since we started to install updates, alerting them of pending restart."
                     "$JAMFHELPER" -windowType utility -lockHUD -title "$updateInProgressTitle" -alignHeading center -alignDescription natural -description "$loginAfterUpdatesInProgressMessage" -icon "$icon" -iconSize 100 -timeout "60"

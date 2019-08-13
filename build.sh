@@ -7,6 +7,14 @@ identifier="com.github.grahampugh.nice_updater"
 version="1.0"
 
 # The title of the message that is displayed when software updates are in progress and a user is logged in
+updateRequiredTitle="macOS Software Updates Required"
+
+# The message that is displayed when software updates are in progress and a user is logged in
+updateRequiredMessage="Software updates are required to be installed on this Mac which require a restart. Please save your work and press Install Now to begin the installation.
+
+The Mac will restart during installation is complete. Some macOS updates may require multiple restarts and/or the computer may shut down as part of the process."
+
+# The title of the message that is displayed when software updates are in progress and a user is logged in
 updateInProgressTitle="Software Update In Progress"
 
 # The message that is displayed when software updates are in progress and a user is logged in
@@ -38,7 +46,7 @@ startInterval="86400"
 mainDaemonPlist="/Library/LaunchDaemons/${identifier}.plist"
 mainDaemonFileName="${mainDaemonPlist##*/}"
 mainOnDemandDaemonPlist="/Library/LaunchDaemons/${identifier}_on_demand.plist"
-onDemainDaemonFileName="${mainOnDemandDaemonPlist##*/}"
+onDemandDaemonFileName="${mainOnDemandDaemonPlist##*/}"
 onDemandDaemonIdentifier="${identifier}_on_demand"
 watchPathsPlist="/Library/Preferences/${identifier}.trigger.plist"
 preferenceFileFullPath="/Library/Preferences/${identifier}.prefs.plist"
@@ -81,17 +89,19 @@ defaults write "$PWD/$mainDaemonFileName" Label -string "$identifier"
 defaults write "$PWD/$mainDaemonFileName" StartInterval -int "$startInterval"
 
 # Create/modify the on_demand Daemon plist
-[[ -e "$PWD/$onDemainDaemonFileName" ]] && /usr/libexec/PlistBuddy -c Clear "$PWD/$onDemainDaemonFileName" &> /dev/null
-defaults write "$PWD/$onDemainDaemonFileName" Label -string "$onDemandDaemonIdentifier"
-/usr/libexec/PlistBuddy -c "Add :ProgramArguments array" "$PWD/$onDemainDaemonFileName"
-/usr/bin/plutil -insert ProgramArguments.0 -string "/bin/bash" "$PWD/$onDemainDaemonFileName"
-/usr/bin/plutil -insert ProgramArguments.1 -string "/Library/Scripts/nice_updater.sh" "$PWD/$onDemainDaemonFileName"
-/usr/bin/plutil -insert ProgramArguments.2 -string "on_demand" "$PWD/$onDemainDaemonFileName"
-/usr/libexec/PlistBuddy -c "Add :WatchPaths array" "$PWD/$onDemainDaemonFileName"
-/usr/bin/plutil -insert WatchPaths.0 -string "$watchPathsPlist" "$PWD/$onDemainDaemonFileName"
+[[ -e "$PWD/$onDemandDaemonFileName" ]] && /usr/libexec/PlistBuddy -c Clear "$PWD/$onDemandDaemonFileName" &> /dev/null
+defaults write "$PWD/$onDemandDaemonFileName" Label -string "$onDemandDaemonIdentifier"
+/usr/libexec/PlistBuddy -c "Add :ProgramArguments array" "$PWD/$onDemandDaemonFileName"
+/usr/bin/plutil -insert ProgramArguments.0 -string "/bin/bash" "$PWD/$onDemandDaemonFileName"
+/usr/bin/plutil -insert ProgramArguments.1 -string "/Library/Scripts/nice_updater.sh" "$PWD/$onDemandDaemonFileName"
+/usr/bin/plutil -insert ProgramArguments.2 -string "on_demand" "$PWD/$onDemandDaemonFileName"
+/usr/libexec/PlistBuddy -c "Add :WatchPaths array" "$PWD/$onDemandDaemonFileName"
+/usr/bin/plutil -insert WatchPaths.0 -string "$watchPathsPlist" "$PWD/$onDemandDaemonFileName"
 
 # Create/modify the main preference file
 [[ -e "$PWD/$preferenceFileName" ]] && /usr/libexec/PlistBuddy -c Clear "$PWD/$preferenceFileName" &> /dev/null
+defaults write "$PWD/$preferenceFileName" UpdateRequiredTitle -string "$updateRequiredTitle"
+defaults write "$PWD/$preferenceFileName" UpdateRequiredMessage -string "$updateRequiredMessage"
 defaults write "$PWD/$preferenceFileName" UpdateInProgressTitle -string "$updateInProgressTitle"
 defaults write "$PWD/$preferenceFileName" UpdateInProgressMessage -string "$updateInProgressMessage"
 defaults write "$PWD/$preferenceFileName" LoginAfterUpdatesInProgressMessage -string "$loginAfterUpdatesInProgressMessage"
@@ -109,9 +119,19 @@ chmod +x /private/tmp/nice_updater/scripts/postinstall
 # Put the main script in place
 cp "$PWD/nice_updater.sh" /private/tmp/nice_updater/files/Library/Scripts/nice_updater.sh
 
+# put a custom icon in place if present
+if find $PWD/custom_icon -name *.png ; then
+    icon_path=/Library/Scripts/nice_updater_custom_icon.png
+    echo "Adding the icon to /private/tmp/nice_updater/files$icon_path"
+    cp -f "$PWD/custom_icon/"*.png /private/tmp/nice_updater/files$icon_path
+    defaults write "$PWD/$preferenceFileName" IconCustomPath -string "$icon_path"
+else
+    echo "Nothing found at $PWD/custom_icon/*.png"
+fi
+
 # Copy the LaunchDaemon plists to the temp build directory
 cp "$PWD/$mainDaemonFileName" "/private/tmp/nice_updater/files/Library/LaunchDaemons/"
-cp "$PWD/$onDemainDaemonFileName" "/private/tmp/nice_updater/files/Library/LaunchDaemons/"
+cp "$PWD/$onDemandDaemonFileName" "/private/tmp/nice_updater/files/Library/LaunchDaemons/"
 cp "$PWD/$preferenceFileName" "/private/tmp/nice_updater/files/Library/Preferences/"
 
 # Remove any unwanted .DS_Store files from the temp build directory
@@ -143,4 +163,8 @@ if [[ "$?" == "0" ]]; then
 else
     echo "Build failed."
 fi
-exit 0
+
+# using plutil is fine but it converts the plists to binary which is not good for readability. Let's convert them back.
+/usr/bin/plutil -convert xml1 "$PWD/$preferenceFileName"
+/usr/bin/plutil -convert xml1 "$PWD/$mainDaemonFileName"
+/usr/bin/plutil -convert xml1 "$PWD/$onDemandDaemonFileName"

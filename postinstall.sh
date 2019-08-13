@@ -14,6 +14,10 @@ chown root:wheel "$preferenceFileFullPath"
 chmod 644 "$preferenceFileFullPath"
 chown root:wheel /Library/Scripts/nice_updater.sh
 chmod 755 /Library/Scripts/nice_updater.sh
+if [[ -f /Library/Scripts/custom_icon.png ]]; then
+    chown root:wheel /Library/Scripts/custom_icon.png
+    chmod 644 /Library/Scripts/custom_icon.png
+fi
 
 # Start our LaunchDaemons
 /bin/launchctl load -w "$mainDaemonPlist"
