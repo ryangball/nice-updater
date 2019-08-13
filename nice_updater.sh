@@ -1,5 +1,4 @@
 #!/bin/bash
-# shellcheck disable=SC2116,SC2002
 
 # These variables will be automagically updated if you run build.sh, no need to modify them
 mainOnDemandDaemonPlist="/Library/LaunchDaemons/com.github.grahampugh.nice_updater_on_demand.plist"
@@ -107,9 +106,9 @@ function alert_user () {
     helperTitle="Software Updates Required"
     helperDesc="Updates are required to be installed on this Mac which require a restart. The Mac will restart after installation."
     if [[ "$notificationsLeft" == "0" ]]; then
-        helperExitCode=$( "$JAMFHELPER" -windowType utility -lockHUD -title "$helperTitle" -heading "$subtitle" -description "$helperDesc" -button1 "Install Now" -defaultButton 1 -timeout 99999 -icon "$icon" -iconSize 100 )
+        helperExitCode=$( "$JAMFHELPER" -windowType utility -lockHUD -title "$helperTitle" -heading "$subtitle" -description "$helperDesc" -button1 "Install Now" -defaultButton 1 -timeout 82800 -icon "$icon" -iconSize 100 )
     else
-        helperExitCode=$( "$JAMFHELPER" -windowType utility -title "$helperTitle" -heading "$subtitle" -description "$helperDesc" -button1 "Install Now" -button2 "Cancel" -defaultButton 1 -cancelButton 2 -timeout 99999 -icon "$icon" -iconSize 100 )
+        helperExitCode=$( "$JAMFHELPER" -windowType utility -title "$helperTitle" -heading "$subtitle" -description "$helperDesc" -button1 "Install Now" -button2 "Cancel" -defaultButton 2 -cancelButton 2 -timeout 82800 -icon "$icon" -iconSize 100 )
     fi
     writelog "Response: $helperExitCode"
     if [[ $helperExitCode == 0 ]]; then
