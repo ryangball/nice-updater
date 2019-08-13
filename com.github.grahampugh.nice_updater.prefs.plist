@@ -13,7 +13,7 @@
 
 If you have any questions please call the Help Desk.</string>
 	<key>MaxNotificationCount</key>
-	<integer>10</integer>
+	<integer>11</integer>
 	<key>UpdateInProgressMessage</key>
 	<string>Apple Software Updates are being installed now. Please do not turn off this Mac, it will automatically reboot once the installation is complete.
 
