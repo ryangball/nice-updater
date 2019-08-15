@@ -11,6 +11,6 @@
 		<string>main</string>
 	</array>
 	<key>StartInterval</key>
-	<integer>86400</integer>
+	<integer>3600</integer>
 </dict>
 </plist>

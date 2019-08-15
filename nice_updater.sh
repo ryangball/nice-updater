@@ -8,6 +8,7 @@ preferenceFileFullPath="/Library/Preferences/com.github.grahampugh.nice_updater.
 ###### Variables below this point are not intended to be modified #####
 helperTitle=$(defaults read "$preferenceFileFullPath" UpdateRequiredTitle)
 helperDesc=$(defaults read "$preferenceFileFullPath" UpdateRequiredMessage)
+alertTimeout=$(defaults read "$preferenceFileFullPath" AlertTimeout)
 updateInProgressTitle=$(defaults read "$preferenceFileFullPath" UpdateInProgressTitle)
 updateInProgressMessage=$(defaults read "$preferenceFileFullPath" UpdateInProgressMessage)
 loginAfterUpdatesInProgressMessage=$(defaults read "$preferenceFileFullPath" LoginAfterUpdatesInProgressMessage)
@@ -15,36 +16,35 @@ log=$(defaults read "$preferenceFileFullPath" Log)
 afterFullUpdateDelayDayCount=$(defaults read "$preferenceFileFullPath" AfterFullUpdateDelayDayCount)
 afterEmptyUpdateDelayDayCount=$(defaults read "$preferenceFileFullPath" AfterEmptyUpdateDelayDayCount)
 maxNotificationCount=$(defaults read "$preferenceFileFullPath" MaxNotificationCount)
+iconCustomPath=$(defaults read "$preferenceFileFullPath" IconCustomPath)
 
-###### Variables below this point are not intended to be modified #####
 scriptName=$(basename "$0")
 osVersion=$(sw_vers -productVersion)
 osMinorVersion=$(echo "$osVersion" | awk -F. '{print $2}')
 osReleaseVersion=$(echo "$osVersion" | awk -F. '{print $3}')
-iconCustomPath=$(defaults read "$preferenceFileFullPath" IconCustomPath)
 JAMFHELPER="/Library/Application Support/JAMF/bin/jamfHelper.app/Contents/MacOS/jamfHelper"
 
 # set default icon if not included in build
-if [[ -z $iconCustomPath ]]; then
+if [[ -f "$iconCustomPath" ]]; then
     icon="$iconCustomPath"
 elif [[ "$osMinorVersion" -le 12 ]]; then
-    icon="/System/Library/CoreServices/Software Update.app/Contents/Resources/SoftwareUpdate.icns"fi
+    icon="/System/Library/CoreServices/Software Update.app/Contents/Resources/SoftwareUpdate.icns"
 elif [[ "$osMinorVersion" -ge 13 ]]; then
     icon="/System/Library/CoreServices/Install Command Line Developer Tools.app/Contents/Resources/SoftwareUpdate.icns"
 fi
 
-function writelog () {
+writelog() {
     DATE=$(date +%Y-%m-%d\ %H:%M:%S)
     /bin/echo "${1}"
     /bin/echo "$DATE" " $1" >> "$log"
 }
 
-function finish () {
+finish() {
     writelog "======== Finished $scriptName ========"
     exit "$1"
 }
 
-function record_last_full_update () {
+record_last_full_update() {
     writelog "Done with update process; recording last full update time."
     /usr/libexec/PlistBuddy -c "Delete :last_full_update_time" $preferenceFileFullPath 2> /dev/null
     /usr/libexec/PlistBuddy -c "Add :last_full_update_time string $(date +%Y-%m-%d\ %H:%M:%S)" $preferenceFileFullPath
@@ -57,7 +57,7 @@ function record_last_full_update () {
     /usr/libexec/PlistBuddy -c "Add :update_key array" $preferenceFileFullPath 2> /dev/null
 }
 
-function initiate_restart () {
+initiate_restart() {
     writelog "Initiating $restartType now..."
     kill "$jamfHelperPID" > /dev/null 2>&1 && wait $! > /dev/null
     if [[ "$restartType" = "restart" ]]; then
@@ -69,7 +69,7 @@ function initiate_restart () {
     fi
 }
 
-function trigger_updates () {
+trigger_updates() {
     # Run softwareupdate and clean up the output so we only see what is necessary.
     # 10.11 and above allows you to skip the update scan, so we can do that since we already scanned for updates initially
     [[ "$osMinorVersion" -ge 11 ]] && noScan='--no-scan'
@@ -85,7 +85,7 @@ function trigger_updates () {
     sleep 5
 }
 
-function compare_date () {
+compare_date() {
     then_unix="$(date -j -f "%Y-%m-%d %H:%M:%S" "$1" +%s)"  # convert date to unix timestamp
     now_unix="$(date +'%s')"    # Get timestamp from right now
     delta=$(( now_unix - then_unix ))   # Will get the amount of time in seconds between then and now
@@ -94,7 +94,7 @@ function compare_date () {
     return
 }
 
-function alert_user () {
+alert_user() {
     local subtitle="$1"
     [[ "$notificationsLeft" == "1" ]] && local subtitle="1 remaining alert before auto-install."
     [[ "$notificationsLeft" == "0" ]] && local subtitle="No deferrals remaining! Click on \"Install Now\" to proceed"
@@ -115,23 +115,53 @@ function alert_user () {
 
     writelog "Notifying $loggedInUser of available updates..."
     if [[ "$notificationsLeft" == "0" ]]; then
-        helperExitCode=$( "$JAMFHELPER" -windowType utility -lockHUD -title "$helperTitle" -heading "$subtitle" -description "$helperDesc" -button1 "Install Now" -defaultButton 1 -timeout 82800 -icon "$icon" -iconSize 100 )
+        helperExitCode=$( "$JAMFHELPER" -windowType utility -lockHUD -title "$helperTitle" -heading "$subtitle" -description "$helperDesc" -button1 "Install Now" -defaultButton 1 -timeout $alertTimeout -icon "$icon" -iconSize 100 )
     else
-        helperExitCode=$( "$JAMFHELPER" -windowType utility -title "$helperTitle" -heading "$subtitle" -description "$helperDesc" -button1 "Install Now" -button2 "Cancel" -defaultButton 2 -cancelButton 2 -timeout 82800 -icon "$icon" -iconSize 100 )
+        "$JAMFHELPER" -windowType utility -title "$helperTitle" -heading "$subtitle" -description "$helperDesc" -button1 "Install Now" -button2 "Cancel" -defaultButton 2 -cancelButton 2 -icon "$icon" -iconSize 100 &
+        jamfHelperPID=$!
+        # since the "cancel" exit code is the same as the timeout exit code, we
+        # need to distinguish between the two. We use a while loop that checks
+        # that the process exists every second. If so, count down 1 and check
+        # again. If the process is gone, use `wait` to grab the exit code.
+        timeLeft=$alertTimeout
+        while [[ $timeLeft > 0 ]]; do
+            if pgrep jamfHelper ; then
+                # writelog "Waiting for timeout: $timeLeft remaining"
+                sleep 1
+                ((timeLeft--))
+            else
+                wait $jamfHelperPID
+                helperExitCode=$?
+                break
+            fi
+        done
+        # if the process is still running, we need to kill it and give a fake
+        # exit code
+        if pgrep jamfHelper; then
+            pkill jamfHelper
+            helperExitCode=1
+        else
+            writelog "A button was pressed."
+        fi
     fi
-    writelog "Response: $helperExitCode"
+    # writelog "Response: $helperExitCode"
     if [[ $helperExitCode == 0 ]]; then
         writelog "User initiated installation."
         defaults write $watchPathsPlist update_key $updateKey
+    elif [[ $helperExitCode == 2 ]]; then
+        writelog "User cancelled installation."
+    else
+        writelog "Alert timed out without response."
+        ((notificationCount--))
     fi
 
     /usr/libexec/PlistBuddy -c "Add :users dict" $preferenceFileFullPath 2> /dev/null
     /usr/libexec/PlistBuddy -c "Delete :users:$loggedInUser" $preferenceFileFullPath 2> /dev/null
     /usr/libexec/PlistBuddy -c "Add :users:$loggedInUser dict" $preferenceFileFullPath
-    /usr/libexec/PlistBuddy -c "Add :users:$loggedInUser:alert_count integer $2" $preferenceFileFullPath
+    /usr/libexec/PlistBuddy -c "Add :users:$loggedInUser:alert_count integer $notificationCount" $preferenceFileFullPath
 }
 
-function alert_logic () {
+alert_logic() {
     notificationCount=$(/usr/libexec/PlistBuddy -c "Print :users:$loggedInUser:alert_count" $preferenceFileFullPath 2> /dev/null | xargs)
     if [[ "$notificationCount" -ge "$maxNotificationCount" ]]; then
         writelog "$loggedInUser has been notified $notificationCount times; not waiting any longer."
@@ -147,11 +177,12 @@ function alert_logic () {
     else
         ((notificationCount++))
         notificationsLeft="$((maxNotificationCount - notificationCount))"
+        writelog "$notificationsLeft remaining alerts before auto-install."
         alert_user "$notificationsLeft remaining alerts before auto-install." "$notificationCount"
     fi
 }
 
-function update_check () {
+update_check() {
     writelog "Determining available Software Updates for macOS $osVersion..."
     updates=$(/usr/sbin/softwareupdate -l)
     updatesNoRestart=$(echo "$updates" | /usr/bin/grep -v restart | /usr/bin/grep -B1 recommended | /usr/bin/grep -v recommended | /usr/bin/awk '{print $2}' | /usr/bin/awk '{printf "%s ", $0}')
@@ -208,7 +239,7 @@ function update_check () {
     fi
 }
 
-on_demand () {
+on_demand() {
     # This function is intended to be run from a LaunchDaemon using WatchPaths that is triggered when the user
     # clicks the "Install now" at a generated prompt. A randomized key is inserted simultaneously in both the
     # WatchPaths file and a seperate preference file, and when confirmed for a match here, it is allowed to run.
@@ -233,7 +264,7 @@ if [[ -n "$testUpdateKey" ]] && [[ "$storedUpdateKeys" == *"$testUpdateKey"* ]];
     fi
 }
 
-function main () {
+main() {
     # This function is intended to be run from a LaunchDaemon at intervals
 
     writelog " "

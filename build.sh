@@ -37,10 +37,13 @@ afterFullUpdateDelayDayCount="14"
 afterEmptyUpdateDelayDayCount="3"
 
 # The number of times to alert a single user prior to forcibly installing updates
-maxNotificationCount="10"
+maxNotificationCount="11"
 
-# The start interval of the main plist, essentially the time in seconds between alerts, 7200 is two hours
-startInterval="86400"
+# The start interval of the main plist, essentially the time in seconds between alerts. 7200 is two hours, 86400 is one day
+startInterval="3600"
+
+# The timeout length of the popup window. Should be less than the start interval so that two popups don't start at once.
+alertTimeout="3540"
 
 ###### Variables below this point are not intended to be modified #####
 mainDaemonPlist="/Library/LaunchDaemons/${identifier}.plist"
@@ -109,6 +112,7 @@ defaults write "$PWD/$preferenceFileName" Log -string "$log"
 defaults write "$PWD/$preferenceFileName" AfterFullUpdateDelayDayCount -int "$afterFullUpdateDelayDayCount"
 defaults write "$PWD/$preferenceFileName" AfterEmptyUpdateDelayDayCount -int "$afterEmptyUpdateDelayDayCount"
 defaults write "$PWD/$preferenceFileName" MaxNotificationCount -int "$maxNotificationCount"
+defaults write "$PWD/$preferenceFileName" AlertTimeout -int "$alertTimeout"
 
 # Migrate preinstall and postinstall scripts to temp build directory
 cp "$PWD/preinstall.sh" /private/tmp/nice_updater/scripts/preinstall
