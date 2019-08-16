@@ -115,7 +115,7 @@ alert_user() {
 
     writelog "Notifying $loggedInUser of available updates..."
     if [[ "$notificationsLeft" == "0" ]]; then
-        helperExitCode=$( "$JAMFHELPER" -windowType utility -lockHUD -title "$helperTitle" -heading "$subtitle" -description "$helperDesc" -button1 "Install Now" -defaultButton 1 -timeout $alertTimeout -icon "$icon" -iconSize 100 )
+        helperExitCode=$( "$JAMFHELPER" -windowType utility -lockHUD -title "$helperTitle" -heading "$subtitle" -description "$helperDesc" -button1 "Install Now" -defaultButton 1 -timeout 300 -icon "$icon" -iconSize 100 )
     else
         "$JAMFHELPER" -windowType utility -title "$helperTitle" -heading "$subtitle" -description "$helperDesc" -button1 "Install Now" -button2 "Cancel" -defaultButton 2 -cancelButton 2 -icon "$icon" -iconSize 100 &
         jamfHelperPID=$!
