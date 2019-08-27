@@ -4,7 +4,7 @@
 identifier="com.github.grahampugh.nice_updater"
 
 # Default version of the build, you can leave this alone and specify as an argument like so: ./build.sh 1.7
-version="1.0"
+version="1.7"
 
 # The title of the message that is displayed when software updates are in progress and a user is logged in
 updateRequiredTitle="macOS Software Updates Required"
@@ -39,8 +39,9 @@ afterEmptyUpdateDelayDayCount="3"
 # The number of times to alert a single user prior to forcibly installing updates
 maxNotificationCount="11"
 
-# The start interval of the main plist, essentially the time in seconds between alerts. 7200 is two hours, 86400 is one day
-startInterval="3600"
+# Calendar based start interval - hours and minutes.
+startIntervalHour="13"   # valid is 0-23. If left blank, daemon will launch every hour instead of once per day.
+startIntervalMinute="0"  # valid is 0-59. Do not leave blank - set as 0
 
 # The timeout length of the popup window. Should be less than the start interval so that two popups don't start at once.
 alertTimeout="3540"
@@ -65,13 +66,16 @@ fi
 # Update the variables in the various files of the project
 # If you know of a more elegant/efficient way to do this please create a PR
 sed -i '' "s#mainDaemonPlist=.*#mainDaemonPlist=\"$mainDaemonPlist\"#" "$PWD/postinstall.sh"
+sed -i '' "s#mainDaemonPlist=.*#mainDaemonPlist=\"$mainDaemonPlist\"#" "$PWD/jamf_postinstall.sh"
 sed -i '' "s#mainDaemonPlist=.*#mainDaemonPlist=\"$mainDaemonPlist\"#" "$PWD/preinstall.sh"
 sed -i '' "s#mainOnDemandDaemonPlist=.*#mainOnDemandDaemonPlist=\"$mainOnDemandDaemonPlist\"#" "$PWD/postinstall.sh"
+sed -i '' "s#mainOnDemandDaemonPlist=.*#mainOnDemandDaemonPlist=\"$mainOnDemandDaemonPlist\"#" "$PWD/jamf_postinstall.sh"
 sed -i '' "s#mainOnDemandDaemonPlist=.*#mainOnDemandDaemonPlist=\"$mainOnDemandDaemonPlist\"#" "$PWD/preinstall.sh"
 sed -i '' "s#mainOnDemandDaemonPlist=.*#mainOnDemandDaemonPlist=\"$mainOnDemandDaemonPlist\"#" "$PWD/nice_updater.sh"
 sed -i '' "s#watchPathsPlist=.*#watchPathsPlist=\"$watchPathsPlist\"#" "$PWD/preinstall.sh"
 sed -i '' "s#watchPathsPlist=.*#watchPathsPlist=\"$watchPathsPlist\"#" "$PWD/nice_updater.sh"
 sed -i '' "s#preferenceFileFullPath=.*#preferenceFileFullPath=\"$preferenceFileFullPath\"#" "$PWD/postinstall.sh"
+sed -i '' "s#preferenceFileFullPath=.*#preferenceFileFullPath=\"$preferenceFileFullPath\"#" "$PWD/jamf_postinstall.sh"
 sed -i '' "s#preferenceFileFullPath=.*#preferenceFileFullPath=\"$preferenceFileFullPath\"#" "$PWD/nice_updater.sh"
 
 # Create clean temp build directories
@@ -89,7 +93,15 @@ defaults write "$PWD/$mainDaemonFileName" Label -string "$identifier"
 /usr/bin/plutil -insert ProgramArguments.0 -string "/bin/bash" "$PWD/$mainDaemonFileName"
 /usr/bin/plutil -insert ProgramArguments.1 -string "/Library/Scripts/nice_updater.sh" "$PWD/$mainDaemonFileName"
 /usr/bin/plutil -insert ProgramArguments.2 -string "main" "$PWD/$mainDaemonFileName"
-defaults write "$PWD/$mainDaemonFileName" StartInterval -int "$startInterval"
+if [[ "$startInterval" ]]; then
+    defaults write "$PWD/$mainDaemonFileName" StartInterval -int "$startInterval"
+else
+    if [[ $startIntervalHour || $startIntervalMinute ]]; then
+        /usr/libexec/PlistBuddy -c "Add :StartCalendarInterval dict" "$PWD/$mainDaemonFileName"
+        [[ $startIntervalHour ]] && /usr/libexec/PlistBuddy -c "Add :StartCalendarInterval:Hour integer '$startIntervalHour'" "$PWD/$mainDaemonFileName"
+        [[ $startIntervalMinute ]] && /usr/libexec/PlistBuddy -c "Add :StartCalendarInterval:Minute integer '$startIntervalMinute'" "$PWD/$mainDaemonFileName"
+    fi
+fi
 
 # Create/modify the on_demand Daemon plist
 [[ -e "$PWD/$onDemandDaemonFileName" ]] && /usr/libexec/PlistBuddy -c Clear "$PWD/$onDemandDaemonFileName" &> /dev/null
@@ -120,8 +132,9 @@ chmod +x /private/tmp/nice_updater/scripts/preinstall
 cp "$PWD/postinstall.sh" /private/tmp/nice_updater/scripts/postinstall
 chmod +x /private/tmp/nice_updater/scripts/postinstall
 
-# Put the main script in place
+# Put the main script and uninstaller in place
 cp "$PWD/nice_updater.sh" /private/tmp/nice_updater/files/Library/Scripts/nice_updater.sh
+cp "$PWD/nice_updater_uninstall.sh" /private/tmp/nice_updater/files/Library/Scripts/nice_updater_uninstall.sh
 
 # put a custom icon in place if present
 if find $PWD/custom_icon -name *.png ; then

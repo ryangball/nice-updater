@@ -44,6 +44,12 @@ finish() {
     exit "$1"
 }
 
+random_delay() {
+    delay_time=$(( ($RANDOM % 300)+1 ))
+    writelog "Delaying software update check by ${delay_time}s."
+    sleep ${delay_time}s
+}
+
 record_last_full_update() {
     writelog "Done with update process; recording last full update time."
     /usr/libexec/PlistBuddy -c "Delete :last_full_update_time" $preferenceFileFullPath 2> /dev/null
@@ -112,6 +118,12 @@ alert_user() {
 
     writelog "Restarting NiceUpdater On-Demand LaunchDaemon..."
     launchctl load -w "$mainOnDemandDaemonPlist"
+
+    if /usr/bin/pgrep jamfHelper ; then
+    writelog "Existing JamfHelper window running... killing"
+        /usr/bin/pkill jamfHelper
+        sleep 3
+    fi
 
     writelog "Notifying $loggedInUser of available updates..."
     if [[ "$notificationsLeft" == "0" ]]; then
@@ -235,6 +247,7 @@ update_check() {
         writelog "No updates at this time; exiting."
         /usr/libexec/PlistBuddy -c "Delete :last_empty_update_time" $preferenceFileFullPath 2> /dev/null
         /usr/libexec/PlistBuddy -c "Add :last_empty_update_time string $(date +%Y-%m-%d\ %H:%M:%S)" $preferenceFileFullPath
+        /usr/libexec/PlistBuddy -c "Delete :users" $preferenceFileFullPath 2> /dev/null
         finish 0
     fi
 }
@@ -281,6 +294,7 @@ main() {
     updatesAvailable=$(/usr/bin/defaults read /Library/Preferences/com.apple.SoftwareUpdate.plist LastRecommendedUpdatesAvailable | /usr/bin/awk '{ if  (NF > 2) {print $1 " "  $2} else { print $0 }}')
     if [[ "$updatesAvailable" -gt "0" ]]; then
         writelog "At least one recommended update was marked available from a previous check."
+        random_delay
         update_check
     else
         lastFullUpdateTime=$(/usr/libexec/PlistBuddy -c "Print :last_full_update_time" $preferenceFileFullPath 2> /dev/null | xargs 2> /dev/null)
@@ -289,6 +303,8 @@ main() {
             daysSinceLastFullUpdate="$(compare_date "$lastFullUpdateTime")"
             if [[ "$daysSinceLastFullUpdate" -ge "$afterFullUpdateDelayDayCount" ]]; then
                 writelog "$afterFullUpdateDelayDayCount or more days have passed since last full update."
+                # delay script's actions by up to 5 mins to prevent all computers running software update at the same time
+                random_delay
                 update_check
             else
                 writelog "Less than $afterFullUpdateDelayDayCount days since last full update; exiting."
@@ -298,6 +314,8 @@ main() {
             daysSinceLastEmptyUpdate="$(compare_date "$lastEmptyUpdateTime")"
             if [[ "$daysSinceLastEmptyUpdate" -ge "$afterEmptyUpdateDelayDayCount" ]]; then
                 writelog "$afterEmptyUpdateDelayDayCount or more days have passed since last empty update check."
+                # delay script's actions by up to 5 mins to prevent all computers running software update at the same time
+                random_delay
                 update_check
             else
                 writelog "Less than $afterEmptyUpdateDelayDayCount days since last empty update check; exiting."
@@ -305,6 +323,8 @@ main() {
             fi
         else
             writelog "This device might not have performed a full update yet."
+            # delay script's actions by up to 5 mins to prevent all computers running software update at the same time
+            random_delay
             update_check
         fi
     fi

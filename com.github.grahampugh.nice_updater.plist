@@ -10,7 +10,12 @@
 		<string>/Library/Scripts/nice_updater.sh</string>
 		<string>main</string>
 	</array>
-	<key>StartInterval</key>
-	<integer>3600</integer>
+	<key>StartCalendarInterval</key>
+	<dict>
+		<key>Hour</key>
+		<integer>13</integer>
+		<key>Minute</key>
+		<integer>0</integer>
+	</dict>
 </dict>
 </plist>
