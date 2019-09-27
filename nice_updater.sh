@@ -75,6 +75,11 @@ initiate_restart() {
     fi
 }
 
+trigger_nonrestart_updates() {
+    [[ "$osMinorVersion" -ge 11 ]] && noScan='--no-scan'
+    /usr/sbin/softwareupdate --install "$1" "$noScan"
+}
+
 trigger_updates() {
     # Run softwareupdate and clean up the output so we only see what is necessary.
     # 10.11 and above allows you to skip the update scan, so we can do that since we already scanned for updates initially
@@ -127,7 +132,7 @@ alert_user() {
 
     writelog "Notifying $loggedInUser of available updates..."
     if [[ "$notificationsLeft" == "0" ]]; then
-        helperExitCode=$( "$JAMFHELPER" -windowType utility -lockHUD -title "$helperTitle" -heading "$subtitle" -description "$helperDesc" -button1 "Install Now" -defaultButton 1 -timeout 300 -icon "$icon" -iconSize 100 )
+        helperExitCode=$( "$JAMFHELPER" -windowType utility -lockHUD -title "$helperTitle" -heading "$subtitle" -description "$helperDesc" -button1 "Install Now" -defaultButton 1 -icon "$icon" -iconSize 100 )
     else
         "$JAMFHELPER" -windowType utility -title "$helperTitle" -heading "$subtitle" -description "$helperDesc" -button1 "Install Now" -button2 "Cancel" -defaultButton 2 -cancelButton 2 -icon "$icon" -iconSize 100 &
         jamfHelperPID=$!
@@ -197,7 +202,7 @@ alert_logic() {
 update_check() {
     writelog "Determining available Software Updates for macOS $osVersion..."
     updates=$(/usr/sbin/softwareupdate -l)
-    updatesNoRestart=$(echo "$updates" | /usr/bin/grep -v restart | /usr/bin/grep -B1 recommended | /usr/bin/grep -v recommended | /usr/bin/awk '{print $2}' | /usr/bin/awk '{printf "%s ", $0}')
+    updatesNoRestart=$(echo "$updates" | grep -v restart | grep -B1 recommended | grep -v recommended | grep -v "\-\-" | sed 's|.*\* ||g')
     updatesRestart=$(echo "$updates" | grep -i restart | grep -v '\*' | cut -d , -f 1)
     updateCount=$(echo "$updates" | grep -i -c recommended)
 
@@ -210,7 +215,10 @@ update_check() {
         # Don't waste the user's time - install any updates that do not require a restart first.
         if [[ -n "$updatesNoRestart" ]]; then
             writelog "Installing updates that DO NOT require a restart in the background..."
-            trigger_updates "$updatesNoRestart"
+            while IFS='' read line; do
+                writelog "Updating: $line"
+                trigger_nonrestart_updates "$line"
+            done <<< "$updatesNoRestart"
         fi
 
         # If the script moves past this point, a restart is required.
