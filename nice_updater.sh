@@ -68,9 +68,11 @@ function trigger_updates () {
     [[ "$osMinorVersion" -ge 11 ]] && noScan='--no-scan'
     # shellcheck disable=SC2086
     updateOutput=$(/usr/sbin/softwareupdate --install $1 "$noScan" | \
-        grep --line-buffered -v -E 'Software Update Tool|Copyright|Finding|Downloaded|Done\.|You have installed one|Please restart immediately\.|select Shut Down from the Apple menu|^$' | \
+        grep --line-buffered -v -E 'Software Update Tool|Copyright|Finding|Downloaded|Done\.|You have installed one|Please restart immediately\.|select Shut Down from the Apple menu|your computer must shut down|^$' | \
         while read -r LINE; do writelog "$LINE"; done)
     if [[ "$updateOutput" =~ "select Shut Down from the Apple menu" ]]; then
+        restartType="shutdown"
+    elif [[ "$updateOutput" =~ "your computer must shut down" ]]; then
         restartType="shutdown"
     else
         restartType="restart"
