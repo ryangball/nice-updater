@@ -22,6 +22,12 @@ loginAfterUpdatesInProgressMessage="Unfortunately you logged in while Apple Soft
 
 If you have any questions please call the Help Desk."
 
+# The button text that is displayed on the 'Yo' notification to INSTALL pending updates
+yoActionButtonText="Install"
+
+# The button text that is displayed on the 'Yo' notification to DEFER pending updates
+yoOtherButtonText="Cancel"
+
 # The location of your log, keep in mind that if you nest the log into a folder that does not exist you'll need to mkdir -p the directory as well
 log="/Library/Logs/Nice_Updater.log"
 
@@ -106,6 +112,8 @@ defaults write "$PWD/$onDemainDaemonFileName" Label -string "$onDemandDaemonIden
 defaults write "$PWD/$preferenceFileName" UpdateInProgressTitle -string "$updateInProgressTitle"
 defaults write "$PWD/$preferenceFileName" UpdateInProgressMessage -string "$updateInProgressMessage"
 defaults write "$PWD/$preferenceFileName" LoginAfterUpdatesInProgressMessage -string "$loginAfterUpdatesInProgressMessage"
+defaults write "$PWD/$preferenceFileName" notificationActionButtonText -string "$notificationActionButtonText"
+defaults write "$PWD/$preferenceFileName" notificationOtherButtonText -string "$notificationOtherButtonText"
 defaults write "$PWD/$preferenceFileName" Log -string "$log"
 defaults write "$PWD/$preferenceFileName" AfterFullUpdateDelayDayCount -int "$afterFullUpdateDelayDayCount"
 defaults write "$PWD/$preferenceFileName" AfterEmptyUpdateDelayDayCount -int "$afterEmptyUpdateDelayDayCount"
