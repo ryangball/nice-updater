@@ -23,7 +23,7 @@ loginAfterUpdatesInProgressMessage="Unfortunately you logged in while Apple Soft
 If you have any questions please call the Help Desk."
 
 # The button text that is displayed on the 'Yo' notification to INSTALL pending updates
-yoActionButtonText="Install"
+yoActionButtonText="Install Now"
 
 # The button text that is displayed on the 'Yo' notification to DEFER pending updates
 yoOtherButtonText="Cancel"
