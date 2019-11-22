@@ -10,6 +10,7 @@ watchPathsPlist="/Library/Preferences/com.github.ryangball.nice_updater.trigger.
 preferenceFileFullPath="/Library/Preferences/com.github.ryangball.nice_updater.prefs.plist"
 
 ###### Variables below this point are not intended to be modified #####
+<<<<<<< HEAD
 updateInProgressTitle=$(/usr/bin/defaults read "$preferenceFileFullPath" UpdateInProgressTitle)
 updateInProgressMessage=$(/usr/bin/defaults read "$preferenceFileFullPath" UpdateInProgressMessage)
 # loginAfterUpdatesInProgressMessage=$(/usr/bin/defaults read "$preferenceFileFullPath" LoginAfterUpdatesInProgressMessage)
@@ -18,6 +19,18 @@ afterFullUpdateDelayDayCount=$(/usr/bin/defaults read "$preferenceFileFullPath" 
 afterEmptyUpdateDelayDayCount=$(/usr/bin/defaults read "$preferenceFileFullPath" AfterEmptyUpdateDelayDayCount)
 maxNotificationCount=$(/usr/bin/defaults read "$preferenceFileFullPath" MaxNotificationCount)
 yoPath=$(/usr/bin/defaults read "$preferenceFileFullPath" YoPath)
+=======
+updateInProgressTitle=$(defaults read "$preferenceFileFullPath" UpdateInProgressTitle)
+updateInProgressMessage=$(defaults read "$preferenceFileFullPath" UpdateInProgressMessage)
+loginAfterUpdatesInProgressMessage=$(defaults read "$preferenceFileFullPath" LoginAfterUpdatesInProgressMessage)
+notificationActionButtonText=$(defaults read "$preferenceFileFullPath" NotificationActionButtonText)
+notificationOtherButtonText=$(defaults read "$preferenceFileFullPath" NotificationOtherButtonText)
+log=$(defaults read "$preferenceFileFullPath" Log)
+afterFullUpdateDelayDayCount=$(defaults read "$preferenceFileFullPath" AfterFullUpdateDelayDayCount)
+afterEmptyUpdateDelayDayCount=$(defaults read "$preferenceFileFullPath" AfterEmptyUpdateDelayDayCount)
+maxNotificationCount=$(defaults read "$preferenceFileFullPath" MaxNotificationCount)
+yoPath=$(defaults read "$preferenceFileFullPath" YoPath)
+>>>>>>> origin/master
 
 ###### Variables below this point are not intended to be modified #####
 scriptName=$(/usr/bin/basename "$0")
@@ -123,7 +136,7 @@ function alert_user () {
 
     writelog "Notifying $loggedInUser of available updates..."
     /bin/launchctl asuser "$loggedInUID" "$yoPath" -t "Software Updates Required" -s "$subtitle" -n "Mac will restart after installation." \
-        -o "Cancel" -b "Install Now" -B "/usr/bin/defaults write $watchPathsPlist update_key -string $updateKey" --ignores-do-not-disturb
+        -o "$notificationOtherButtonText" -b "$notificationActionButtonText" -B "/usr/bin/defaults write $watchPathsPlist update_key -string $updateKey" --ignores-do-not-disturb
     /usr/libexec/PlistBuddy -c "Add :users dict" $preferenceFileFullPath 2> /dev/null
     /usr/libexec/PlistBuddy -c "Delete :users:$loggedInUser" $preferenceFileFullPath 2> /dev/null
     /usr/libexec/PlistBuddy -c "Add :users:$loggedInUser dict" $preferenceFileFullPath
