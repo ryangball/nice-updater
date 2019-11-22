@@ -13,6 +13,8 @@ preferenceFileFullPath="/Library/Preferences/com.github.ryangball.nice_updater.p
 updateInProgressTitle=$(defaults read "$preferenceFileFullPath" UpdateInProgressTitle)
 updateInProgressMessage=$(defaults read "$preferenceFileFullPath" UpdateInProgressMessage)
 loginAfterUpdatesInProgressMessage=$(defaults read "$preferenceFileFullPath" LoginAfterUpdatesInProgressMessage)
+notificationActionButtonText=$(defaults read "$preferenceFileFullPath" NotificationActionButtonText)
+notificationOtherButtonText=$(defaults read "$preferenceFileFullPath" NotificationOtherButtonText)
 log=$(defaults read "$preferenceFileFullPath" Log)
 afterFullUpdateDelayDayCount=$(defaults read "$preferenceFileFullPath" AfterFullUpdateDelayDayCount)
 afterEmptyUpdateDelayDayCount=$(defaults read "$preferenceFileFullPath" AfterEmptyUpdateDelayDayCount)
@@ -110,7 +112,7 @@ function alert_user () {
 
     writelog "Notifying $loggedInUser of available updates..."
     /bin/launchctl asuser "$loggedInUID" "$yoPath" -t "Software Updates Required" -s "$subtitle" -n "Mac will restart after installation." \
-        -o "Cancel" -b "Install Now" -B "/usr/bin/defaults write $watchPathsPlist update_key -string $updateKey" --ignores-do-not-disturb
+        -o "$notificationOtherButtonText" -b "$notificationActionButtonText" -B "/usr/bin/defaults write $watchPathsPlist update_key -string $updateKey" --ignores-do-not-disturb
     /usr/libexec/PlistBuddy -c "Add :users dict" $preferenceFileFullPath 2> /dev/null
     /usr/libexec/PlistBuddy -c "Delete :users:$loggedInUser" $preferenceFileFullPath 2> /dev/null
     /usr/libexec/PlistBuddy -c "Add :users:$loggedInUser dict" $preferenceFileFullPath
