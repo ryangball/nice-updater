@@ -10,16 +10,6 @@ watchPathsPlist="/Library/Preferences/com.github.ryangball.nice_updater.trigger.
 preferenceFileFullPath="/Library/Preferences/com.github.ryangball.nice_updater.prefs.plist"
 
 ###### Variables below this point are not intended to be modified #####
-<<<<<<< HEAD
-updateInProgressTitle=$(/usr/bin/defaults read "$preferenceFileFullPath" UpdateInProgressTitle)
-updateInProgressMessage=$(/usr/bin/defaults read "$preferenceFileFullPath" UpdateInProgressMessage)
-# loginAfterUpdatesInProgressMessage=$(/usr/bin/defaults read "$preferenceFileFullPath" LoginAfterUpdatesInProgressMessage)
-log=$(/usr/bin/defaults read "$preferenceFileFullPath" Log)
-afterFullUpdateDelayDayCount=$(/usr/bin/defaults read "$preferenceFileFullPath" AfterFullUpdateDelayDayCount)
-afterEmptyUpdateDelayDayCount=$(/usr/bin/defaults read "$preferenceFileFullPath" AfterEmptyUpdateDelayDayCount)
-maxNotificationCount=$(/usr/bin/defaults read "$preferenceFileFullPath" MaxNotificationCount)
-yoPath=$(/usr/bin/defaults read "$preferenceFileFullPath" YoPath)
-=======
 updateInProgressTitle=$(defaults read "$preferenceFileFullPath" UpdateInProgressTitle)
 updateInProgressMessage=$(defaults read "$preferenceFileFullPath" UpdateInProgressMessage)
 loginAfterUpdatesInProgressMessage=$(defaults read "$preferenceFileFullPath" LoginAfterUpdatesInProgressMessage)
@@ -30,7 +20,6 @@ afterFullUpdateDelayDayCount=$(defaults read "$preferenceFileFullPath" AfterFull
 afterEmptyUpdateDelayDayCount=$(defaults read "$preferenceFileFullPath" AfterEmptyUpdateDelayDayCount)
 maxNotificationCount=$(defaults read "$preferenceFileFullPath" MaxNotificationCount)
 yoPath=$(defaults read "$preferenceFileFullPath" YoPath)
->>>>>>> origin/master
 
 ###### Variables below this point are not intended to be modified #####
 scriptName=$(/usr/bin/basename "$0")
