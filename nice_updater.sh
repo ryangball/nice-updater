@@ -9,10 +9,9 @@ mainOnDemandDaemonPlist="/Library/LaunchDaemons/com.github.ryangball.nice_update
 watchPathsPlist="/Library/Preferences/com.github.ryangball.nice_updater.trigger.plist"
 preferenceFileFullPath="/Library/Preferences/com.github.ryangball.nice_updater.prefs.plist"
 
-###### Variables below this point are not intended to be modified #####
+###### Variables in this section are specified in the preference file #####
 updateInProgressTitle=$(defaults read "$preferenceFileFullPath" UpdateInProgressTitle)
 updateInProgressMessage=$(defaults read "$preferenceFileFullPath" UpdateInProgressMessage)
-loginAfterUpdatesInProgressMessage=$(defaults read "$preferenceFileFullPath" LoginAfterUpdatesInProgressMessage)
 notificationActionButtonText=$(defaults read "$preferenceFileFullPath" NotificationActionButtonText)
 notificationOtherButtonText=$(defaults read "$preferenceFileFullPath" NotificationOtherButtonText)
 log=$(defaults read "$preferenceFileFullPath" Log)
@@ -47,20 +46,15 @@ function finish () {
     # Record our last full update if we installed all updates
     if [[ "$recordFullUpdate" == "true" ]]; then
         writelog "Done with update process; recording last full update time."
-        # /usr/libexec/PlistBuddy -c "Delete :last_full_update_time" $preferenceFileFullPath 2> /dev/null
-        # /usr/libexec/PlistBuddy -c "Add :last_full_update_time string $(date +%Y-%m-%d\ %H:%M:%S)" $preferenceFileFullPath
-        /usr/bin/defaults delete "$preferenceFileFullPath" last_full_update_time
-        /usr/bin/defaults write "$preferenceFileFullPath" last_full_update_time -string "$(date +%Y-%m-%d\ %H:%M:%S)"
+        /usr/libexec/PlistBuddy -c "Delete :last_full_update_time" $preferenceFileFullPath 2> /dev/null
+        /usr/libexec/PlistBuddy -c "Add :last_full_update_time string $(date +%Y-%m-%d\ %H:%M:%S)" $preferenceFileFullPath
 
         writelog "Clearing user alert data."
-        # /usr/libexec/PlistBuddy -c "Delete :users" $preferenceFileFullPath
-        /usr/bin/defaults delete "$preferenceFileFullPath" users
+        /usr/libexec/PlistBuddy -c "Delete :users" $preferenceFileFullPath
 
         writelog "Clearing On-Demand Update Key."
-        # /usr/libexec/PlistBuddy -c "Delete :update_key" $preferenceFileFullPath 2> /dev/null
-        # /usr/libexec/PlistBuddy -c "Add :update_key array" $preferenceFileFullPath 2> /dev/null
-        /usr/bin/defaults delete "$preferenceFileFullPath" update_key
-        /usr/bin/defaults write "$preferenceFileFullPath" update_key -array
+        /usr/libexec/PlistBuddy -c "Delete :update_key" $preferenceFileFullPath 2> /dev/null
+        /usr/libexec/PlistBuddy -c "Add :update_key array" $preferenceFileFullPath 2> /dev/null
     fi
 
     kill "$jamfHelperPID" > /dev/null 2>&1 && wait $! > /dev/null
@@ -113,12 +107,10 @@ function alert_user () {
 
     writelog "Generating NiceUpdater Update Key..."
     updateKey=$(cat /dev/urandom | env LC_CTYPE=C tr -dc a-zA-Z0-9 | head -c 16; echo)
-    # /usr/libexec/PlistBuddy -c "Add :update_key array" $preferenceFileFullPath 2> /dev/null
     /usr/bin/defaults write "$preferenceFileFullPath" update_key -array 2> /dev/null
     /usr/bin/plutil -insert update_key.0 -string "$updateKey" "$preferenceFileFullPath"
 
-    # /usr/libexec/PlistBuddy -c "Delete :update_key" $watchPathsPlist 2> /dev/null
-    /usr/bin/defaults delete "$watchPathsPlist" update_key 2> /dev/null
+    /usr/libexec/PlistBuddy -c "Delete :update_key" $watchPathsPlist 2> /dev/null
 
     writelog "Restarting NiceUpdater On-Demand LaunchDaemon..."
     /bin/launchctl load -w "$mainOnDemandDaemonPlist"
@@ -150,6 +142,7 @@ function update_check () {
     writelog "Determining available Software Updates for macOS $osVersion..."
     updates=$(/usr/sbin/softwareupdate -l)
 
+    # Account for the differences in pre/post Catalina softwareupdate -l output
     if [[ "$osMinorVersion" -le 14 ]]; then
         updatesNoRestart=$(echo "$updates" | /usr/bin/grep -Ei "restart|shut down" -B1 | /usr/bin/diff --normal - <(echo "$updates") | /usr/bin/sed -n -e 's/^.*[\*|-] //p')
         updatesRestart=$(echo "$updates" | /usr/bin/grep -Ei "restart|shut down" -B1 | /usr/bin/grep -vEi 'restart|shut down' | /usr/bin/sed -n -e 's/^.*\* //p')
@@ -184,7 +177,7 @@ function update_check () {
             # If no user is logged in, just update and restart. Check the user now as some time has past since the script began.
             loggedInUser=$(/usr/sbin/scutil <<< "show State:/Users/ConsoleUser" | /usr/bin/awk '/Name :/ && ! /loginwindow/ { print $3 }')
             loggedInUID=$(id -u "$loggedInUser")
-            if [[ "$loggedInUser" == "root" ]] || [[ -z "$loggedInUser" ]]; then
+            if [[ -z "$loggedInUser" ]]; then
                 writelog "No user logged in."
                 install_restart_updates
             fi
@@ -197,10 +190,8 @@ function update_check () {
         fi
     else
         writelog "No updates at this time; exiting."
-        # /usr/libexec/PlistBuddy -c "Delete :last_empty_update_time" $preferenceFileFullPath 2> /dev/null
-        # /usr/libexec/PlistBuddy -c "Add :last_empty_update_time string $(date +%Y-%m-%d\ %H:%M:%S)" $preferenceFileFullPath
-        /usr/bin/defaults delete "$preferenceFileFullPath" last_empty_update_time 2> /dev/null
-        /usr/bin/defaults write "$preferenceFileFullPath" last_empty_update_time -string "$(date +%Y-%m-%d\ %H:%M:%S)"
+        /usr/libexec/PlistBuddy -c "Delete :last_empty_update_time" $preferenceFileFullPath 2> /dev/null
+        /usr/libexec/PlistBuddy -c "Add :last_empty_update_time string $(date +%Y-%m-%d\ %H:%M:%S)" $preferenceFileFullPath
         exit 0
     fi
 }
@@ -246,10 +237,8 @@ function main () {
         writelog "At least one recommended update was marked available from a previous check."
         update_check
     else
-        # lastFullUpdateTime=$(/usr/libexec/PlistBuddy -c "Print :last_full_update_time" $preferenceFileFullPath 2> /dev/null | /usr/bin/xargs 2> /dev/null)
-        # lastEmptyUpdateTime=$(/usr/libexec/PlistBuddy -c "Print :last_empty_update_time" $preferenceFileFullPath 2> /dev/null | /usr/bin/xargs 2> /dev/null)
-        lastFullUpdateTime=$(/usr/bin/defaults read "$preferenceFileFullPath" "last_full_update_time" 2> /dev/null | /usr/bin/xargs)
-        lastEmptyUpdateTime=$(/usr/bin/defaults read "$preferenceFileFullPath" "last_empty_update_time" 2> /dev/null | /usr/bin/xargs)
+        lastFullUpdateTime=$(/usr/libexec/PlistBuddy -c "Print :last_full_update_time" $preferenceFileFullPath 2> /dev/null | /usr/bin/xargs 2> /dev/null)
+        lastEmptyUpdateTime=$(/usr/libexec/PlistBuddy -c "Print :last_empty_update_time" $preferenceFileFullPath 2> /dev/null | /usr/bin/xargs 2> /dev/null)
         if [[ -n "$lastFullUpdateTime" ]]; then
             daysSinceLastFullUpdate="$(compare_date "$lastFullUpdateTime")"
             if [[ "$daysSinceLastFullUpdate" -ge "$afterFullUpdateDelayDayCount" ]]; then
