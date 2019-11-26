@@ -41,8 +41,8 @@ Whether you choose to [build](https://github.com/ryangball/nice-updater#build-th
 | UpdateInProgressTitle | string | Title of UpdateInProgressMessage dialog. |
 | UpdateInProgressMessage | string | Message to display to the logged in user when restart-required updates are being installed. |
 | LoginAfterUpdatesInProgressMessage | string | Message to display to to a user who logged in **while** restart-required updates were being installed. |
-| NotificationActionButtonText | string | Button text that is displayed on the Yo notification to **install** pending updates
-| NotificationOtherButtonText | string | Button text that is displayed on the Yo notification to **defer** pending updates
+| NotificationActionButtonText | string | Button text that is displayed on the Yo notification to **install** pending updates. |
+| NotificationOtherButtonText | string | Button text that is displayed on the Yo notification to **defer** pending updates. |
 | Log | string | Full path of the log file. |
 | AfterFullUpdateDelayDayCount | int | After a full update has been performed (all updates available are installed), updates will not be checked again until N days have passed (default is 14 days). |
 | AfterEmptyUpdateDelayDayCount | int | Number of days to delay the process after an update check occurs where no updates were found (default is 3). This delay will ensure that we are not checking for updates all day long if there are no updates found in the morning. This is also a good way to stagger updates out over your entire fleet. |
