@@ -3,7 +3,7 @@ A tool to update macOS that (nicely) gives the user several chances to install u
 
 ## Requirements
 ### Yo
-- [Yo](https://github.com/sheagcraig/yo) is required to display the Notification Center alerts. The alerts that 'Yo' creates are persistent, and you can specify custom buttons which apply an action. This is used to allow the user to either cancel the alert, or install updates from there easily. *See [Jamf Pro Requirements](https://github.com/ryangball/nice-updater#jamf-pro-requirements) for related information.
+- [Yo](https://github.com/sheagcraig/yo) is required to display the Notification Center alerts. The alerts that 'Yo' create are persistent, and you can specify custom buttons which apply an action. This is used to allow the user to either cancel the alert, or install updates from there easily. *See [Jamf Pro Requirements](https://github.com/ryangball/nice-updater#jamf-pro-requirements) for related information.
 - To avoid packaging 'Yo' for use in your Jamf Pro environment, you can configure a Jamf Pro policy with "Execution Frequency" set to "Ongoing", triggered by a custom event called "yo" which runs [install_latest_yo.sh](https://github.com/ryangball/nice-updater/blob/master/install_latest_yo.sh) as a payload.
 - Alternatively you can download the latest release .pkg of 'Yo' [here](https://github.com/sheagcraig/yo/releases/latest). There is also info on how to customize the 'Yo' default icon [here](https://github.com/sheagcraig/yo#icons).
 
@@ -41,6 +41,8 @@ Whether you choose to [build](https://github.com/ryangball/nice-updater#build-th
 | UpdateInProgressTitle | string | Title of UpdateInProgressMessage dialog. |
 | UpdateInProgressMessage | string | Message to display to the logged in user when restart-required updates are being installed. |
 | LoginAfterUpdatesInProgressMessage | string | Message to display to to a user who logged in **while** restart-required updates were being installed. |
+| NotificationActionButtonText | string | Button text that is displayed on the 'Yo' notification to **install** pending updates
+| NotificationOtherButtonText | string | Button text that is displayed on the 'Yo' notification to **defer** pending updates
 | Log | string | Full path of the log file. |
 | AfterFullUpdateDelayDayCount | int | After a full update has been performed (all updates available are installed), updates will not be checked again until N days have passed (default is 14 days). |
 | AfterEmptyUpdateDelayDayCount | int | Number of days to delay the process after an update check occurs where no updates were found (default is 3). This delay will ensure that we are not checking for updates all day long if there are no updates found in the morning. This is also a good way to stagger updates out over your entire fleet. |
@@ -120,10 +122,4 @@ The second LaunchDaemon (com.github.ryangball.nice_updater_on_demand) runs the o
 
 [grahampugh](https://github.com/grahampugh) - For making me realize I should just start the LaunchDaemon after installation for consistency
 
-## Special Thanks
-[kurtroberts](https://github.com/kurtroberts) - For [install_latest_yo.sh](https://github.com/ryangball/nice-updater/blob/master/install_latest_yo.sh)
-
-[grahampugh](https://github.com/grahampugh) - For making me realize I should just start the LaunchDaemon after installation for consistency
-
 [peterlewis](https://github.com/peterlewis) - For adding the ability to customize the Yo action/other buttons via a preference file
-
