@@ -43,7 +43,7 @@ maxNotificationCount="3"
 # The start interval of the main plist, essentially the time in seconds between alerts, 7200 is two hours
 startInterval="7200"
 
-# The full path of the yo.app binary
+# The full path of the 'Yo' binary
 yoPath="/Applications/Utilities/yo.app/Contents/MacOS/yo"
 
 ###### Variables below this point are not intended to be modified #####
