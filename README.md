@@ -8,9 +8,9 @@ A tool to update macOS that (nicely) gives the user several chances to install u
 - Alternatively you can download the latest release .pkg of 'Yo' [here](https://github.com/sheagcraig/yo/releases/latest). There is also info on how to customize the 'Yo' default icon [here](https://github.com/sheagcraig/yo#icons).
 
 ### Jamf Pro Requirements
-*Note: There are no Jamf Pro policies required in order for this tool to function (if yo.app is installed). However, I use Jamf Pro to manage Macs. Consequently, I've created this minimally leveraging Jamf Pro. You could easily adapt this for use in other environments.*
+*Note: There are no Jamf Pro policies required in order for this tool to function (if 'Yo' is installed). However, I use Jamf Pro to manage Macs. Consequently, I've created this minimally leveraging Jamf Pro. You could easily adapt this for use in other environments.*
 - jamfHelper is used to display the user dialogs when updates are being installed.
-- The .pkg preinstall script checks for the presence of yo.app, if it is not installed it runs a `jamf policy -event yo` to install it (the custom trigger can be changed if necessary). If yo.app is not installed and the jamf policy trigger fails, the Nice_Updater.pkg will fail to install.
+- The .pkg preinstall script checks for the presence of 'Yo', if it is not installed it runs a `jamf policy -event yo` to install it (the custom trigger can be changed if necessary). If 'Yo' is not installed and the jamf policy trigger fails, the Nice_Updater.pkg will fail to install.
 - The Jamf Binary is used to reboot the Mac (if required).
 
 ## Build the Project into a .PKG
@@ -45,7 +45,7 @@ Whether you choose to [build](https://github.com/ryangball/nice-updater#build-th
 | AfterFullUpdateDelayDayCount | int | After a full update has been performed (all updates available are installed), updates will not be checked again until N days have passed (default is 14 days). |
 | AfterEmptyUpdateDelayDayCount | int | Number of days to delay the process after an update check occurs where no updates were found (default is 3). This delay will ensure that we are not checking for updates all day long if there are no updates found in the morning. This is also a good way to stagger updates out over your entire fleet. |
 | MaxNotificationCount | int | Max number of alerts for a single user before restart-required updates are force-installed. |
-| YoPath | string | Full path of yo.app. |
+| YoPath | string | Full path of 'Yo'. |
 | UpdatesBlocked | bool | Set to true to block updates. |
 
 ### Modify Preference File Examples
@@ -80,7 +80,7 @@ The primary LaunchDaemon is scheduled to be run every two hours by default (7200
 
 ### When a User is Logged In
 - Updates are downloaded, and if no restart is required the updates are installed immediately in the background.
-- If a restart *is* required the user will be alerted via yo.app. The user can choose to cancel the alert, or install the restart-required updates now and the Mac will restart afterward.
+- If a restart *is* required the user will be alerted via 'Yo'. The user can choose to cancel the alert, or install the restart-required updates now and the Mac will restart afterward.
 - The default number of alerts before a forced install of the restart-required updates is 3, this can be changed for your environment. When using this default value a single user gets alerted 3 times (once every two hours) and has the option to install at any of those points, if they do not, two hours after the last alert the update will be applied and the Mac will restart. The user is will also receive a jamfHelper dialog when the updates are being applied letting them know their machine will restart soon.
 - The alert logic tracks which users are alerted, so it will only forcibly install those restart-required updates if the same user is alerted 3 times (when using the default value) **or** of course if a user is not logged in.
 
@@ -109,7 +109,7 @@ Once the user has received their final alert and they do not choose to install, 
 </p>
 
 ## What's With Two LaunchDaemons?
-When a user is alerted via one of the persistent Notification Center alerts, the user has the option to install updates now. This is done through the yo.app action button, which in this case is the "Install Now" button. These actions are performed as the user, meaning that actions which require root permissions could not be performed when a standard user is clicking the "Install Now" button.
+When a user is alerted via one of the persistent Notification Center alerts, the user has the option to install updates now. This is done through the 'Yo' action button, which in this case is the "Install Now" button. These actions are performed as the user, meaning that actions which require root permissions could not be performed when a standard user is clicking the "Install Now" button.
 
 To address this issue, when the user is alerted a random key string is generated and stored. This key is then simultaneously written to the main preference file and to the command that gets executed if and when the user clicks the "Install Now" button. Once the user clicks the "Install Now" button, that key is then written to a second preference file and used later in the process. I call this second preference file the "trigger".
 
