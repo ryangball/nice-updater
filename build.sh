@@ -22,10 +22,10 @@ loginAfterUpdatesInProgressMessage="Unfortunately you logged in while Apple Soft
 
 If you have any questions please call the Help Desk."
 
-# The button text that is displayed on the 'Yo' notification to INSTALL pending updates
+# The button text that is displayed on the Yo notification to INSTALL pending updates
 notificationActionButtonText="Install Now"
 
-# The button text that is displayed on the 'Yo' notification to DEFER pending updates
+# The button text that is displayed on the Yo notification to DEFER pending updates
 notificationOtherButtonText="Cancel"
 
 # The location of your log, keep in mind that if you nest the log into a folder that does not exist you'll need to mkdir -p the directory as well
