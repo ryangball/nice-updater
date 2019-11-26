@@ -119,3 +119,11 @@ The second LaunchDaemon (com.github.ryangball.nice_updater_on_demand) runs the o
 [kurtroberts](https://github.com/kurtroberts) - For [install_latest_yo.sh](https://github.com/ryangball/nice-updater/blob/master/install_latest_yo.sh)
 
 [grahampugh](https://github.com/grahampugh) - For making me realize I should just start the LaunchDaemon after installation for consistency
+
+## Special Thanks
+[kurtroberts](https://github.com/kurtroberts) - For [install_latest_yo.sh](https://github.com/ryangball/nice-updater/blob/master/install_latest_yo.sh)
+
+[grahampugh](https://github.com/grahampugh) - For making me realize I should just start the LaunchDaemon after installation for consistency
+
+[peterlewis](https://github.com/peterlewis) - For adding the ability to customize the Yo action/other buttons via a preference file
+
