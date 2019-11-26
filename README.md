@@ -2,10 +2,10 @@
 A tool to update macOS that (nicely) gives the user several chances to install updates prior to a forced installation and restart (if required).
 
 ## Requirements
-### yo.app
-- [yo.app](https://github.com/sheagcraig/yo) is required to display the Notification Center alerts. The alerts that yo.app create are persistent, and you can specify custom buttons which apply an action. This is used to allow the user to either cancel the alert, or install updates from there easily. *See [Jamf Pro Requirements](https://github.com/ryangball/nice-updater#jamf-pro-requirements) for related information.
-- To avoid packaging yo.app for use in your Jamf Pro environment, you can configure a Jamf Pro policy with "Execution Frequency" set to "Ongoing", triggered by a custom event called "yo" which runs [install_latest_yo.sh](https://github.com/ryangball/nice-updater/blob/master/install_latest_yo.sh) as a payload.
-- Alternatively you can download the latest release .pkg of yo.app [here](https://github.com/sheagcraig/yo/releases/latest). There is also info on how to customize the yo.app default icon [here](https://github.com/sheagcraig/yo#icons).
+### Yo
+- [Yo](https://github.com/sheagcraig/yo) is required to display the Notification Center alerts. The alerts that 'Yo' creates are persistent, and you can specify custom buttons which apply an action. This is used to allow the user to either cancel the alert, or install updates from there easily. *See [Jamf Pro Requirements](https://github.com/ryangball/nice-updater#jamf-pro-requirements) for related information.
+- To avoid packaging 'Yo' for use in your Jamf Pro environment, you can configure a Jamf Pro policy with "Execution Frequency" set to "Ongoing", triggered by a custom event called "yo" which runs [install_latest_yo.sh](https://github.com/ryangball/nice-updater/blob/master/install_latest_yo.sh) as a payload.
+- Alternatively you can download the latest release .pkg of 'Yo' [here](https://github.com/sheagcraig/yo/releases/latest). There is also info on how to customize the 'Yo' default icon [here](https://github.com/sheagcraig/yo#icons).
 
 ### Jamf Pro Requirements
 *Note: There are no Jamf Pro policies required in order for this tool to function (if yo.app is installed). However, I use Jamf Pro to manage Macs. Consequently, I've created this minimally leveraging Jamf Pro. You could easily adapt this for use in other environments.*
