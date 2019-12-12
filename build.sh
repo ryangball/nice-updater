@@ -46,6 +46,9 @@ startInterval="7200"
 # The full path of the 'Yo' binary
 yoPath="/Applications/Utilities/yo.app/Contents/MacOS/yo"
 
+# The trigger used to install yo.app via Jamf Pro
+yoTrigger="yo"
+
 ###### Variables below this point are not intended to be modified #####
 mainDaemonPlist="/Library/LaunchDaemons/${identifier}.plist"
 mainDaemonFileName="${mainDaemonPlist##*/}"
@@ -75,6 +78,7 @@ sed -i '' "s#watchPathsPlist=.*#watchPathsPlist=\"$watchPathsPlist\"#" "$PWD/nic
 sed -i '' "s#preferenceFileFullPath=.*#preferenceFileFullPath=\"$preferenceFileFullPath\"#" "$PWD/postinstall.sh"
 sed -i '' "s#preferenceFileFullPath=.*#preferenceFileFullPath=\"$preferenceFileFullPath\"#" "$PWD/nice_updater.sh"
 sed -i '' "s#yoPath=.*#yoPath=\"$yoPath\"#" "$PWD/preinstall.sh"
+sed -i '' "s#yoTrigger=.*#yoTrigger=\"$yoTrigger\"#" "$PWD/preinstall.sh"
 sed -i '' "s#identifier=.*#identifier=\"$identifier\"#" "$PWD/postinstall.sh"
 
 # Create clean temp build directories
