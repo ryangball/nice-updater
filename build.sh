@@ -22,10 +22,10 @@ loginAfterUpdatesInProgressMessage="Unfortunately you logged in while Apple Soft
 
 If you have any questions please call the Help Desk."
 
-# The button text that is displayed on the 'Yo' notification to INSTALL pending updates
+# The button text that is displayed on the Yo notification to INSTALL pending updates
 notificationActionButtonText="Install Now"
 
-# The button text that is displayed on the 'Yo' notification to DEFER pending updates
+# The button text that is displayed on the Yo notification to DEFER pending updates
 notificationOtherButtonText="Cancel"
 
 # The location of your log, keep in mind that if you nest the log into a folder that does not exist you'll need to mkdir -p the directory as well
@@ -43,7 +43,7 @@ maxNotificationCount="3"
 # The start interval of the main plist, essentially the time in seconds between alerts, 7200 is two hours
 startInterval="7200"
 
-# The full path of the yo.app binary
+# The full path of the 'Yo' binary
 yoPath="/Applications/Utilities/yo.app/Contents/MacOS/yo"
 
 # The trigger used to install yo.app via Jamf Pro
