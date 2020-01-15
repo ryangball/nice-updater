@@ -81,8 +81,8 @@ function install_restart_updates () {
     recordFullUpdate="true"
     restartEnabled="true"
 
-    # If the OS is 10.13.4 or higher, configure softwareupdate with the --restart argument to automate the restart or shut down of the Mac
-    [[ "$automatedRestartEnabled" == "true" ]] && restartArgument='--restart'
+    # If the OS is 10.13.4 or higher, configure softwareupdate with the --restart and --force arguments to automate the restart or shut down of the Mac
+    [[ "$automatedRestartEnabled" == "true" ]] && restartArgument='--restart --force'
 
     /usr/sbin/softwareupdate --install --all --no-scan "$restartArgument" | /usr/bin/awk '!/Software Update Tool|Copyright|Finding|Done\.|^$/' | while read -r LINE; do writelog "$LINE"; done;
     exit 0
