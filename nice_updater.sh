@@ -45,7 +45,7 @@ finish() {
 }
 
 random_delay() {
-    delay_time=$(( ($RANDOM % 300)+1 ))
+    delay_time=$(( (RANDOM % 300)+1 ))
     writelog "Delaying software update check by ${delay_time}s."
     sleep ${delay_time}s
 }
@@ -114,7 +114,7 @@ alert_user() {
     launchctl unload -w "$mainOnDemandDaemonPlist"
 
     writelog "Generating NiceUpdater Update Key..."
-    updateKey=$(cat /dev/urandom | env LC_CTYPE=C tr -dc a-zA-Z0-9 | head -c 16; echo)
+    updateKey=$(< /dev/urandom env LC_CTYPE=C tr -dc a-zA-Z0-9 | head -c 16; echo)
     /usr/libexec/PlistBuddy -c "Add :update_key array" $preferenceFileFullPath 2> /dev/null
     /usr/bin/plutil -insert update_key.0 -string "$updateKey" $preferenceFileFullPath
 
@@ -141,7 +141,7 @@ alert_user() {
         # that the process exists every second. If so, count down 1 and check
         # again. If the process is gone, use `wait` to grab the exit code.
         timeLeft=$alertTimeout
-        while [[ $timeLeft > 0 ]]; do
+        while [[ $timeLeft -gt 0 ]]; do
             if pgrep jamfHelper ; then
                 # writelog "Waiting for timeout: $timeLeft remaining"
                 sleep 1
@@ -164,7 +164,7 @@ alert_user() {
     # writelog "Response: $helperExitCode"
     if [[ $helperExitCode == 0 ]]; then
         writelog "User initiated installation."
-        defaults write $watchPathsPlist update_key $updateKey
+        defaults write $watchPathsPlist update_key "$updateKey"
     elif [[ $helperExitCode == 2 ]]; then
         writelog "User cancelled installation."
     else
@@ -215,7 +215,7 @@ update_check() {
         # Don't waste the user's time - install any updates that do not require a restart first.
         if [[ -n "$updatesNoRestart" ]]; then
             writelog "Installing updates that DO NOT require a restart in the background..."
-            while IFS='' read line; do
+            while IFS='' read -r line; do
                 writelog "Updating: $line"
                 trigger_nonrestart_updates "$line"
             done <<< "$updatesNoRestart"
@@ -227,7 +227,7 @@ update_check() {
 
             # If no user is logged in, just update and restart. Check the user now as some time has past since the script began.
             loggedInUser=$(/usr/sbin/scutil <<< "show State:/Users/ConsoleUser" | /usr/bin/awk -F': ' '/[[:space:]]+Name[[:space:]]:/ { if ( $2 != "loginwindow" ) { print $2 }}')
-            loggedInUID=$(id -u "$loggedInUser")
+            # loggedInUID=$(id -u "$loggedInUser")
             if [[ "$loggedInUser" == "root" ]] || [[ -z "$loggedInUser" ]]; then
                 writelog "No user logged in."
                 writelog "Installing updates that DO require a restart..."
@@ -271,8 +271,8 @@ on_demand() {
     writelog "Verifying On-Demand Update Key..."
     storedUpdateKeys=$(/usr/libexec/PlistBuddy -c "Print update_key" $preferenceFileFullPath | sed -e 1d -e '$d' | sed 's/^ *//')
     testUpdateKey=$(defaults read $watchPathsPlist update_key)
-if [[ -n "$testUpdateKey" ]] && [[ "$storedUpdateKeys" == *"$testUpdateKey"* ]]; then
-    writelog "On-Demand Update Key confirmed; continuing."
+    if [[ -n "$testUpdateKey" ]] && [[ "$storedUpdateKeys" == *"$testUpdateKey"* ]]; then
+        writelog "On-Demand Update Key confirmed; continuing."
         "$JAMFHELPER" -windowType utility -lockHUD -title "$updateInProgressTitle" -alignHeading center -alignDescription natural -description "$updateInProgressMessage" -icon "$icon" -iconSize 100 &
         jamfHelperPID=$(echo $!)
         writelog "Installing updates that DO require a restart..."
