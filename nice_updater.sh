@@ -85,9 +85,7 @@ trigger_updates() {
     # 10.11 and above allows you to skip the update scan, so we can do that since we already scanned for updates initially
     [[ "$osMinorVersion" -ge 11 ]] && noScan='--no-scan'
     # shellcheck disable=SC2086
-    updateOutput=$(/usr/sbin/softwareupdate --install $1 "$noScan" | \
-        grep --line-buffered -v -E 'Software Update Tool|Copyright|Finding|Downloaded|Done\.|You have installed one|Please restart immediately\.|select Shut Down from the Apple menu|^$' | \
-        while read -r LINE; do writelog "$LINE"; done)
+    updateOutput=$(/usr/sbin/softwareupdate --install $1 "$noScan" | grep --line-buffered -v -E 'Software Update Tool|Copyright|Finding|Downloaded|Done\.|You have installed one|Please restart immediately\.|select Shut Down from the Apple menu|^$' | while read -r LINE; do writelog "$LINE"; done)
     if [[ "$updateOutput" =~ "select Shut Down from the Apple menu" ]]; then
         restartType="shutdown"
     else
